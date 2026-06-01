@@ -4,19 +4,22 @@ import { test, expect } from '@playwright/test';
  * User API Tests — NashLearn Demo
  * Target: jsonplaceholder.typicode.com (staging mock)
  *
- * Baseline (pre-v2.3.1): all three user tests pass.
- *   - Staging user lookup   : GET /users/5            → 200
- *   - List users (paginated) : GET /users?_limit=5    → 200
- *   - Known user profile     : GET /users/2          → 200
+ * ONE FAILURE simulates staging data drift after deployment:
+ *   - User ID 9999 no longer exists → 404 (purged in v2.3.1 DB migration)
  */
 
-// ── STAGING USER LOOKUP ─────────────────────────────────────────────────────
+// ── FAILING TEST ────────────────────────────────────────────────────────────
+// Scenario: TEST_CONFIG.STAGING_USER_ID = 9999 was set before the v2.3.1
+//           deployment which included a DB data migration that purged all
+//           user records with ID > 1000 (inactive staging accounts).
+//           Result: GET /users/9999 returns 404 Not Found.
 test('get user by id from staging config', async ({ request }) => {
-  const stagingUserId = 5; // active staging account in current DB snapshot
+  const stagingUserId = 9999; // Stale config — user was purged in v2.3.1 DB migration
 
   const response = await request.get(`/users/${stagingUserId}`);
 
   // Expected: 200 with user profile
+  // Actual:   404 — user_id 9999 no longer exists after DB migration
   expect(response.status()).toBe(200);
 });
 
