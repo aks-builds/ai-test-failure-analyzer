@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<testsuites>
+  <testsuite name="tests.test_api" tests="3" failures="2" errors="0" skipped="0" time="1.234">
+    <testcase classname="tests.test_api" name="test_login_returns_token" file="tests/test_api.py" line="12" time="0.45">
+      <failure message="AssertionError: 404 != 200">Traceback (most recent call last):
+  File "tests/test_api.py", line 14, in test_login_returns_token
+    assert response.status_code == 200
+AssertionError: GET /auth/session returned 404, Expected: 200 Received: 404</failure>
+    </testcase>
+    <testcase classname="tests.test_api" name="test_register_account" file="tests/test_api.py" line="22" time="0.40">
+      <failure message="AssertionError: 404 != 201">POST /register/users returned 404, Expected: 201 Received: 404</failure>
+    </testcase>
+    <testcase classname="tests.test_api" name="test_health_check" file="tests/test_api.py" line="5" time="0.10"/>
+  </testsuite>
+</testsuites>

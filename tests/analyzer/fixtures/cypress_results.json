@@ -1,0 +1,56 @@
+{
+  "stats": {
+    "suites": 1,
+    "tests": 3,
+    "passes": 1,
+    "pending": 0,
+    "failures": 2,
+    "start": "2026-06-01T10:00:00.000Z",
+    "end": "2026-06-01T10:00:05.000Z",
+    "duration": 5000
+  },
+  "results": [
+    {
+      "file": "cypress/e2e/auth.cy.ts",
+      "fullFile": "/repo/cypress/e2e/auth.cy.ts",
+      "suites": [
+        {
+          "title": "Auth flow",
+          "tests": [
+            {
+              "title": "user can log in",
+              "fullTitle": "Auth flow user can log in",
+              "duration": 1234,
+              "state": "failed",
+              "pass": false,
+              "fail": true,
+              "err": {
+                "message": "Expected: 200 Received: 404",
+                "estack": "AssertionError: expected 404 to equal 200 at /repo/cypress/e2e/auth.cy.ts:10\n    GET /auth/session"
+              }
+            },
+            {
+              "title": "user can register",
+              "fullTitle": "Auth flow user can register",
+              "duration": 1100,
+              "state": "failed",
+              "err": {
+                "message": "Expected: 201 Received: 404",
+                "estack": "POST /register/users returned 404"
+              }
+            },
+            {
+              "title": "health check",
+              "fullTitle": "Auth flow health check",
+              "duration": 50,
+              "state": "passed",
+              "pass": true,
+              "err": {}
+            }
+          ],
+          "suites": []
+        }
+      ]
+    }
+  ]
+}

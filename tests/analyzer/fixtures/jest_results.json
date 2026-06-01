@@ -1,0 +1,44 @@
+{
+  "numTotalTests": 3,
+  "numFailedTests": 2,
+  "numPassedTests": 1,
+  "success": false,
+  "testResults": [
+    {
+      "name": "/repo/tests/auth.test.js",
+      "status": "failed",
+      "assertionResults": [
+        {
+          "title": "POST /api/login returns token",
+          "fullName": "auth POST /api/login returns token",
+          "status": "failed",
+          "ancestorTitles": ["auth"],
+          "location": {"line": 14, "column": 5},
+          "duration": 312,
+          "failureMessages": [
+            "Error: expect(received).toBe(expected)\n\nExpected: 200\nReceived: 404\n\n  at /repo/tests/auth.test.js:14:31\n    POST /api/login"
+          ]
+        },
+        {
+          "title": "GET /api/users/9999 returns profile",
+          "fullName": "users GET /api/users/9999 returns profile",
+          "status": "failed",
+          "ancestorTitles": ["users"],
+          "location": {"line": 8, "column": 3},
+          "duration": 87,
+          "failureMessages": [
+            "Error: Expected: 200 Received: 404 at /repo/tests/auth.test.js:8:3 GET /api/users/9999"
+          ]
+        },
+        {
+          "title": "GET /api/users/1 returns profile",
+          "fullName": "users GET /api/users/1 returns profile",
+          "status": "passed",
+          "ancestorTitles": ["users"],
+          "duration": 45,
+          "failureMessages": []
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,76 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "qa-test-failure-analyzer"
+version = "1.0.0"
+description = "MCP server for AI-assisted QA test failure analysis. Supports Playwright, pytest, Jest/Vitest, Cypress/WebdriverIO."
+readme = "README.md"
+requires-python = ">=3.10,<3.15"
+license = { text = "MIT" }
+authors = [{ name = "NashTech AI" }]
+keywords = ["mcp", "testing", "qa", "ai", "playwright", "pytest", "jest", "cypress", "root-cause-analysis"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3 :: Only",
+    "Topic :: Software Development :: Testing",
+]
+
+dependencies = [
+    "mcp>=1.2.0",
+    "pydantic>=2.7",
+    "pydantic-settings>=2.3",
+    "fastapi>=0.111",
+    "uvicorn[standard]>=0.30",
+    "jinja2>=3.1",
+    "sse-starlette>=2.1",
+    "questionary>=2.0",
+    "rich>=13.7",
+    "textual>=0.70",
+    "typer>=0.12",
+    "lxml>=5.2",
+    "PyGithub>=2.3",
+    "python-dotenv>=1.0",
+    "httpx>=0.27",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8",
+    "pytest-asyncio>=0.23",
+    "ruff>=0.5",
+    "mypy>=1.10",
+    "pip-audit>=2.7",
+]
+
+[project.scripts]
+analyzer = "analyzer.__main__:main"
+analyzer-tui = "analyzer.ui.tui:run"
+analyzer-web = "analyzer.ui.web.app:run"
+
+[project.urls]
+Homepage = "https://github.com/nashtech/ai-test-failure-analyzer"
+
+[tool.setuptools.packages.find]
+include = ["analyzer*"]
+exclude = ["tests*", "node_modules*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests/analyzer"]
+asyncio_mode = "auto"
+
+[tool.ruff]
+line-length = 110
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W", "B", "UP"]
+ignore = ["E501"]
+
+[tool.mypy]
+python_version = "3.10"
+warn_unused_configs = true
+ignore_missing_imports = true

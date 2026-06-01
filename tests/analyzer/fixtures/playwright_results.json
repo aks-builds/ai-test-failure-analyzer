@@ -1,0 +1,387 @@
+{
+  "config": {
+    "configFile": "C:\\NashTech\\ai-test-failure-analyzer\\playwright.config.ts",
+    "rootDir": "C:/NashTech/ai-test-failure-analyzer/tests/playwright",
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "C:/NashTech/ai-test-failure-analyzer/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "",
+        "name": "",
+        "testDir": "C:/NashTech/ai-test-failure-analyzer/tests/playwright",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 15000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "test-results/results.json"
+        }
+      ],
+      [
+        "junit",
+        {
+          "outputFile": "test-results/results.xml"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.60.0",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "auth.spec.ts",
+      "file": "auth.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "login returns token for valid credentials",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 15000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 2232,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m200\u001b[39m\nReceived: \u001b[31m404\u001b[39m",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m200\u001b[39m\nReceived: \u001b[31m404\u001b[39m\n    at C:\\NashTech\\ai-test-failure-analyzer\\tests\\playwright\\auth.spec.ts:22:29",
+                    "location": {
+                      "file": "C:\\NashTech\\ai-test-failure-analyzer\\tests\\playwright\\auth.spec.ts",
+                      "column": 29,
+                      "line": 22
+                    },
+                    "snippet": "\u001b[0m \u001b[90m 20 |\u001b[39m   \u001b[90m// Expected: 200 with session token\u001b[39m\n \u001b[90m 21 |\u001b[39m   \u001b[90m// Actual:   404 — endpoint path changed in v2.3.1 deployment\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 22 |\u001b[39m   expect(response\u001b[33m.\u001b[39mstatus())\u001b[33m.\u001b[39mtoBe(\u001b[35m200\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                             \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 23 |\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m 24 |\u001b[39m\n \u001b[90m 25 |\u001b[39m \u001b[90m// ── PASSING TEST ────────────────────────────────────────────────────────────\u001b[39m\u001b[0m"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "C:\\NashTech\\ai-test-failure-analyzer\\tests\\playwright\\auth.spec.ts",
+                        "column": 29,
+                        "line": 22
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m200\u001b[39m\nReceived: \u001b[31m404\u001b[39m\n\n  20 |   // Expected: 200 with session token\n  21 |   // Actual:   404 — endpoint path changed in v2.3.1 deployment\n> 22 |   expect(response.status()).toBe(200);\n     |                             ^\n  23 | });\n  24 |\n  25 | // ── PASSING TEST ────────────────────────────────────────────────────────────\n    at C:\\NashTech\\ai-test-failure-analyzer\\tests\\playwright\\auth.spec.ts:22:29"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-06-01T04:15:42.941Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "C:\\NashTech\\ai-test-failure-analyzer\\test-results\\auth-login-returns-token-for-valid-credentials\\error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "C:\\NashTech\\ai-test-failure-analyzer\\tests\\playwright\\auth.spec.ts",
+                    "column": 29,
+                    "line": 22
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "d748ac400d08b85935ef-4bb53da786efb8ab4cbd",
+          "file": "auth.spec.ts",
+          "line": 16,
+          "column": 5
+        },
+        {
+          "title": "login with full credentials",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 15000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 398,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-06-01T04:15:45.701Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "d748ac400d08b85935ef-628d3636c21876376207",
+          "file": "auth.spec.ts",
+          "line": 27,
+          "column": 5
+        },
+        {
+          "title": "register new account via /api/register",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 15000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 799,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m201\u001b[39m\nReceived: \u001b[31m404\u001b[39m",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m201\u001b[39m\nReceived: \u001b[31m404\u001b[39m\n    at C:\\NashTech\\ai-test-failure-analyzer\\tests\\playwright\\auth.spec.ts:48:29",
+                    "location": {
+                      "file": "C:\\NashTech\\ai-test-failure-analyzer\\tests\\playwright\\auth.spec.ts",
+                      "column": 29,
+                      "line": 48
+                    },
+                    "snippet": "\u001b[0m \u001b[90m 46 |\u001b[39m   \u001b[90m// Expected: 201 Created\u001b[39m\n \u001b[90m 47 |\u001b[39m   \u001b[90m// Actual:   404 — endpoint path changed in v2.3.1 deployment\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 48 |\u001b[39m   expect(response\u001b[33m.\u001b[39mstatus())\u001b[33m.\u001b[39mtoBe(\u001b[35m201\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                             \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 49 |\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m 50 |\u001b[39m\u001b[0m"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "C:\\NashTech\\ai-test-failure-analyzer\\tests\\playwright\\auth.spec.ts",
+                        "column": 29,
+                        "line": 48
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m201\u001b[39m\nReceived: \u001b[31m404\u001b[39m\n\n  46 |   // Expected: 201 Created\n  47 |   // Actual:   404 — endpoint path changed in v2.3.1 deployment\n> 48 |   expect(response.status()).toBe(201);\n     |                             ^\n  49 | });\n  50 |\n    at C:\\NashTech\\ai-test-failure-analyzer\\tests\\playwright\\auth.spec.ts:48:29"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-06-01T04:15:46.129Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "C:\\NashTech\\ai-test-failure-analyzer\\test-results\\auth-register-new-account-via-api-register\\error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "C:\\NashTech\\ai-test-failure-analyzer\\tests\\playwright\\auth.spec.ts",
+                    "column": 29,
+                    "line": 48
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "d748ac400d08b85935ef-4d8212cc681dff504e54",
+          "file": "auth.spec.ts",
+          "line": 40,
+          "column": 5
+        }
+      ]
+    },
+    {
+      "title": "users.spec.ts",
+      "file": "users.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "get user by id from staging config",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 15000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 1239,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m200\u001b[39m\nReceived: \u001b[31m404\u001b[39m",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m200\u001b[39m\nReceived: \u001b[31m404\u001b[39m\n    at C:\\NashTech\\ai-test-failure-analyzer\\tests\\playwright\\users.spec.ts:23:29",
+                    "location": {
+                      "file": "C:\\NashTech\\ai-test-failure-analyzer\\tests\\playwright\\users.spec.ts",
+                      "column": 29,
+                      "line": 23
+                    },
+                    "snippet": "\u001b[0m \u001b[90m 21 |\u001b[39m   \u001b[90m// Expected: 200 with user profile\u001b[39m\n \u001b[90m 22 |\u001b[39m   \u001b[90m// Actual:   404 — user_id 9999 no longer exists after DB migration\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 23 |\u001b[39m   expect(response\u001b[33m.\u001b[39mstatus())\u001b[33m.\u001b[39mtoBe(\u001b[35m200\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                             \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 24 |\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m 25 |\u001b[39m\n \u001b[90m 26 |\u001b[39m \u001b[90m// ── PASSING TEST 1 ──────────────────────────────────────────────────────────\u001b[39m\u001b[0m"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "C:\\NashTech\\ai-test-failure-analyzer\\tests\\playwright\\users.spec.ts",
+                        "column": 29,
+                        "line": 23
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m200\u001b[39m\nReceived: \u001b[31m404\u001b[39m\n\n  21 |   // Expected: 200 with user profile\n  22 |   // Actual:   404 — user_id 9999 no longer exists after DB migration\n> 23 |   expect(response.status()).toBe(200);\n     |                             ^\n  24 | });\n  25 |\n  26 | // ── PASSING TEST 1 ──────────────────────────────────────────────────────────\n    at C:\\NashTech\\ai-test-failure-analyzer\\tests\\playwright\\users.spec.ts:23:29"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-06-01T04:15:47.417Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "C:\\NashTech\\ai-test-failure-analyzer\\test-results\\users-get-user-by-id-from-staging-config\\error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "C:\\NashTech\\ai-test-failure-analyzer\\tests\\playwright\\users.spec.ts",
+                    "column": 29,
+                    "line": 23
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "7d08affc2ce055c80dfd-3e4f88dbaaa79672f749",
+          "file": "users.spec.ts",
+          "line": 16,
+          "column": 5
+        },
+        {
+          "title": "list users returns paginated data",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 15000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 395,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-06-01T04:15:49.186Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "7d08affc2ce055c80dfd-c86f2059db93217d943f",
+          "file": "users.spec.ts",
+          "line": 27,
+          "column": 5
+        },
+        {
+          "title": "get known user by id returns user profile",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 15000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 3,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 187,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-06-01T04:15:49.610Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "7d08affc2ce055c80dfd-6dc52ab20aea82bc7f33",
+          "file": "users.spec.ts",
+          "line": 37,
+          "column": 5
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-06-01T04:15:42.468Z",
+    "duration": 7359.852,
+    "expected": 3,
+    "skipped": 0,
+    "unexpected": 3,
+    "flaky": 0
+  }
+}

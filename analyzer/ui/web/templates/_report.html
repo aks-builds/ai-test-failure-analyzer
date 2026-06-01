@@ -1,0 +1,70 @@
+{# Rendered HTML fragment swapped into #report by HTMX after POST /analyze #}
+
+<div class="summary">
+  <span class="badge ok">framework: {{ result.framework }}</span>
+  <span class="badge">{{ result.failures|length }} tests</span>
+  <span class="badge err">{{ failures_failed|length }} failing</span>
+  <span class="badge">{{ result.hypotheses|length }} clusters</span>
+  <span class="badge muted">{{ "%.1f"|format(result.elapsed_seconds) }}s</span>
+</div>
+
+<h3>Failure Triage</h3>
+<table class="triage">
+  <thead><tr><th>#</th><th>Test</th><th>File</th><th>Got</th><th>Expected</th></tr></thead>
+  <tbody>
+  {% for f in failures_failed %}
+    <tr>
+      <td>{{ loop.index }}</td>
+      <td>{{ f.title }}</td>
+      <td><code>{{ f.file }}{% if f.line %}:{{ f.line }}{% endif %}</code></td>
+      <td class="got">{{ (f.http or {}).get('status_got') or f.actual or '?' }}</td>
+      <td class="exp">{{ (f.http or {}).get('status_expected') or f.expected or '?' }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+
+{% if result.hypotheses %}
+  <h3>Root-Cause Hypotheses</h3>
+  {% for h in result.hypotheses %}
+    <article class="hypothesis confidence-{{ 'high' if h.confidence >= 70 else 'med' if h.confidence >= 50 else 'low' }}">
+      <header>
+        <span class="cid">{{ h.cluster_id }}</span>
+        <h4>{{ h.title }}</h4>
+        <span class="conf">{{ h.confidence }}%</span>
+      </header>
+      <div class="bar"><div class="fill" style="width: {{ h.confidence }}%"></div></div>
+      <p class="just">{{ h.confidence_justification }}</p>
+      <p>{{ h.summary }}</p>
+
+      <details>
+        <summary>Affected tests ({{ h.affected_tests|length }})</summary>
+        <ul>{% for t in h.affected_tests %}<li>❌ {{ t }}</li>{% endfor %}</ul>
+      </details>
+
+      <details>
+        <summary>Evidence chain</summary>
+        <ul>
+        {% for ev in h.evidence_chain %}
+          <li><b>{{ ev.source }}</b> <code>{{ ev.ref }}</code> — {{ ev.excerpt }}</li>
+        {% endfor %}
+        </ul>
+      </details>
+
+      <details>
+        <summary>Remediation</summary>
+        <ol>{% for step in h.remediation %}<li>{{ step }}</li>{% endfor %}</ol>
+      </details>
+
+      <form class="issue-form" hx-post="/issue" hx-target="next .issue-result">
+        <input type="hidden" name="cluster_id" value="{{ h.cluster_id }}">
+        <input type="text" name="repo" value="{{ default_repo }}" placeholder="owner/repo" required>
+        <label class="inline-check"><input type="checkbox" name="live" value="1" {% if not has_token %}disabled{% endif %}> Live (vs dry-run)</label>
+        <button type="submit" class="secondary">Create issue</button>
+      </form>
+      <div class="issue-result"></div>
+    </article>
+  {% endfor %}
+{% else %}
+  <p class="muted">No hypotheses generated. (Either no failures, or insufficient signal to cluster.)</p>
+{% endif %}

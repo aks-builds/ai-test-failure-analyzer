@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>QA Test Failure Analyzer</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/static/app.css">
+  <script src="https://unpkg.com/htmx.org@1.9.12" integrity="sha384-ujb1lZYygJmzgSwoxRggbCHcjc0rB2XoQrxeTUQyRjrOnlCoYta87iKBWq3EsdM2" crossorigin="anonymous"></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo">🤖</span>
+      <span class="name">QA Test Failure Analyzer</span>
+      <span class="tag">MCP server · CLI · TUI · Web</span>
+    </div>
+    <div class="actions">
+      <a href="/report.md" class="link-btn" target="_blank">⬇ report.md</a>
+      <a href="https://github.com/nashtech/ai-test-failure-analyzer" class="link-btn" target="_blank">GitHub</a>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="card">
+      <h2>1. Configure</h2>
+      <form id="analyze-form" hx-post="/analyze" hx-target="#report" hx-indicator="#spinner">
+        <label>Results file
+          <input type="text" name="results_path" value="{{ default_results_path }}" required>
+        </label>
+        <label>Framework
+          <select name="framework">
+            <option value="auto" selected>auto-detect</option>
+            <option value="playwright">Playwright</option>
+            <option value="pytest">pytest</option>
+            <option value="jest">Jest</option>
+            <option value="vitest">Vitest</option>
+            <option value="cypress">Cypress</option>
+            <option value="webdriverio">WebdriverIO</option>
+            <option value="junit">JUnit (generic)</option>
+          </select>
+        </label>
+        <button type="submit" class="primary">Analyze</button>
+        <span id="spinner" class="htmx-indicator">⏳ analyzing…</span>
+      </form>
+    </section>
+
+    <section class="card">
+      <h2>2. Hypotheses</h2>
+      <div id="report">
+        <p class="muted">Run an analysis above to see ranked root-cause hypotheses.</p>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <p>
+        Default repo for issues: <code>{{ default_repo or '— not set —' }}</code>
+        · GITHUB_TOKEN: <code>{{ 'set ✓' if has_token else 'not set (dry-run only)' }}</code>
+      </p>
+      <p class="muted">
+        Listening on 127.0.0.1 only · No telemetry · Same engine as the CLI, TUI, and MCP server.
+      </p>
+    </footer>
+  </main>
+</body>
+</html>

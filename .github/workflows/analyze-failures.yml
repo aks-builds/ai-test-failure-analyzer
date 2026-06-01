@@ -1,0 +1,108 @@
+name: Analyze Test Failures
+
+# Runs the Playwright suite, and if anything fails, runs the QA Test Failure Analyzer
+# to produce a hypothesis report and (optionally) file a GitHub issue automatically.
+
+on:
+  pull_request:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+    inputs:
+      create_issue:
+        description: "Create a GitHub issue for the top hypothesis?"
+        required: false
+        default: "true"
+        type: choice
+        options:
+          - "true"
+          - "false"
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+jobs:
+  test-and-analyze:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 50   # enough commits for the analyzer's git scan
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Install analyzer (Python)
+        run: pip install -e .
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run Playwright tests
+        id: tests
+        run: npx playwright test
+        continue-on-error: true       # we WANT to see failures so the analyzer runs
+
+      - name: Analyze failures
+        if: steps.tests.outcome == 'failure'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          ANALYZER_GITHUB_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          analyzer analyze \
+            --results test-results/results.json \
+            --non-interactive \
+            --format markdown \
+            --out analysis.md \
+            ${{ (github.event_name != 'workflow_dispatch' || inputs.create_issue == 'true') && '--create-issue' || '' }} \
+            --repo "${GITHUB_REPOSITORY}"
+
+      - name: Upload analysis artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: failure-analysis
+          path: |
+            analysis.md
+            test-results/
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Comment on PR
+        if: steps.tests.outcome == 'failure' && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            if (!fs.existsSync('analysis.md')) return;
+            const body = fs.readFileSync('analysis.md', 'utf8');
+            const truncated = body.length > 60000 ? body.slice(0, 60000) + '\n\n_… (truncated; see workflow artifact for full report)_' : body;
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              body: '## 🤖 Test Failure Analysis\n\n' + truncated,
+            });
+
+      # Make the job fail if tests actually failed — but only AFTER analysis ran.
+      - name: Fail if tests failed
+        if: steps.tests.outcome == 'failure'
+        run: exit 1

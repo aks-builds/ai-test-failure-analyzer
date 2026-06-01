@@ -1,0 +1,20 @@
+{
+  "name": "ai-test-failure-analyzer",
+  "version": "1.0.0",
+  "description": "MCP server + Playwright demo for AI-assisted QA test failure analysis. Works with Playwright, pytest, Jest/Vitest, Cypress, WebdriverIO.",
+  "scripts": {
+    "test": "playwright test",
+    "test:report": "playwright test && playwright show-report",
+    "setup:python": "pip install -e .",
+    "analyze": "playwright test; analyzer analyze --results test-results/results.json",
+    "analyze:tui": "analyzer tui",
+    "analyze:web": "analyzer web",
+    "mcp:stdio": "analyzer serve-stdio",
+    "mcp:http": "analyzer serve-http --port 8765",
+    "verify": "pytest tests/analyzer -q"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.45.0",
+    "typescript": "^5.4.0"
+  }
+}
