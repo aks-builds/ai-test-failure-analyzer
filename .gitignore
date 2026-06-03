@@ -1,25 +1,6 @@
-# ─── Project-specific ────────────────────────────────────────────────────────
+# ─── Claude Code ──────────────────────────────────────────────────────────────
+*.claude/
 CLAUDE.md
-
-# Playwright test-results — runtime artifacts only (canonical fixture lives at tests/analyzer/fixtures/)
-test-results/
-
-# Playwright report output
-playwright-report/
-blob-report/
-
-# ─── Node / npm ───────────────────────────────────────────────────────────────
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.pnp.*
-.yarn/
-
-# TypeScript compiled output
-*.js.map
-dist/
-out/
 
 # ─── IDEs & editors ───────────────────────────────────────────────────────────
 .vscode/
@@ -33,7 +14,7 @@ out/
 Thumbs.db
 desktop.ini
 
-# ─── Python ──────────────────────────────────────────────────────────────────
+# ─── Python ───────────────────────────────────────────────────────────────────
 __pycache__/
 *.pyc
 *.pyo
@@ -52,10 +33,10 @@ build/
 *.egg-info/
 *.egg
 
-# ─── Analyzer artifacts ──────────────────────────────────────────────────────
+# ─── Analyzer runtime artifacts ───────────────────────────────────────────────
+test-results/
 analysis.md
 analysis.json
 .env
 .env.local
 .env.*.local
-
