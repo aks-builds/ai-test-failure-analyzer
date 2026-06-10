@@ -13,6 +13,7 @@ Event shapes:
 
 from __future__ import annotations
 
+import os
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -22,7 +23,7 @@ from .evidence import cluster_failures, correlate, scan_config, scan_git_history
 from .hypothesis import Hypothesis, form_hypotheses
 from .parsers import detect, parse
 from .render.markdown import render_markdown_report
-from .security import safe_path
+from .security import SecurityError
 from .workspace_scanner import WorkspaceProfile, scan_workspace
 from .noise_filter import filter_hypotheses as _filter_hypotheses
 
@@ -103,14 +104,21 @@ def analyze(
 
     # ── Phase 1: Collect failures ──────────────────────────────────────────
     emit({"phase": 1, "name": "Collect failures", "status": "started"})
-    # safe_results_path is the sanitised form — keeps CodeQL's taint tracking clean.
-    safe_results_path = safe_path(workspace, results_path)
-    if not safe_results_path.exists():
-        new = ask("results_path_missing")
-        if new:
-            safe_results_path = safe_path(workspace, new)
-    if not safe_results_path.exists():
+    # Inline realpath+join+startswith — the pattern CodeQL's CWE-022 sanitiser
+    # recognises. Using os.path functions (strings) keeps the taint chain clean.
+    _root = str(workspace)
+    _joined = os.path.realpath(os.path.join(_root, str(results_path)))
+    if not (_joined == _root or _joined.startswith(_root + os.sep)):
+        raise SecurityError("results_path escapes workspace root.")
+    if not os.path.isfile(_joined):
+        _new = ask("results_path_missing")
+        if _new:
+            _joined = os.path.realpath(os.path.join(_root, str(_new)))
+            if not (_joined == _root or _joined.startswith(_root + os.sep)):
+                raise SecurityError("results_path escapes workspace root.")
+    if not os.path.isfile(_joined):
         raise FileNotFoundError("Test results file not found.")
+    safe_results_path = Path(_joined)
 
     if framework == "auto":
         detected = detect(safe_results_path)

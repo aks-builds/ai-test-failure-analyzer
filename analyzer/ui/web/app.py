@@ -96,32 +96,36 @@ async def do_issue(
     cluster_id: str = Form(...),
     live: str = Form("0"),
 ) -> HTMLResponse:
-    result: AnalysisResult | None = _last_result.get("result")
-    if not result or not result.hypotheses:
-        return HTMLResponse("<div class='alert error'>No analysis result in memory. Run analysis first.</div>")
+    try:
+        result: AnalysisResult | None = _last_result.get("result")
+        if not result or not result.hypotheses:
+            return HTMLResponse("<div class='alert error'>No analysis result in memory. Run analysis first.</div>")
 
-    hyp = next((h for h in result.hypotheses if h.cluster_id == cluster_id), result.hypotheses[0])
-    is_dry = live != "1" or not github_token()
-    out = create_issue_from_hypothesis(repo=repo, hypothesis=hyp, dry_run=is_dry)
+        hyp = next((h for h in result.hypotheses if h.cluster_id == cluster_id), result.hypotheses[0])
+        is_dry = live != "1" or not github_token()
+        out = create_issue_from_hypothesis(repo=repo, hypothesis=hyp, dry_run=is_dry)
 
-    if out.get("created"):
-        safe_url = escape(str(out.get("url", "")))
-        return HTMLResponse(
-            f"<div class='alert success'>&#x2713; Issue created: "
-            f"<a href='{safe_url}' target='_blank' rel='noopener noreferrer'>{safe_url}</a></div>"
-        )
-    if out.get("dry_run"):
-        wc = out["would_create"]
-        body_bytes = int(wc.get("body_bytes", 0))
-        return HTMLResponse(
-            f"<div class='alert info'>Dry-run preview:<br>"
-            f"<b>Repo:</b> {escape(str(wc.get('repo', '')))}<br>"
-            f"<b>Title:</b> {escape(str(wc.get('title', '')))}<br>"
-            f"<b>Labels:</b> {escape(', '.join(str(l) for l in wc.get('labels', [])))}<br>"
-            f"<b>Body:</b> {body_bytes} bytes</div>"
-        )
-    _log.warning("Issue creation failed: %s", out.get("reason", "unknown"))
-    return HTMLResponse("<div class='alert error'>&#x2717; Could not create issue. Check server logs.</div>")
+        if out.get("created"):
+            safe_url = escape(str(out.get("url", "")))
+            return HTMLResponse(
+                f"<div class='alert success'>&#x2713; Issue created: "
+                f"<a href='{safe_url}' target='_blank' rel='noopener noreferrer'>{safe_url}</a></div>"
+            )
+        if out.get("dry_run"):
+            wc = out.get("would_create") or {}
+            body_bytes = int(wc.get("body_bytes") or 0)
+            return HTMLResponse(
+                f"<div class='alert info'>Dry-run preview:<br>"
+                f"<b>Repo:</b> {escape(str(wc.get('repo', '')))}<br>"
+                f"<b>Title:</b> {escape(str(wc.get('title', '')))}<br>"
+                f"<b>Labels:</b> {escape(', '.join(str(l) for l in wc.get('labels', [])))}<br>"
+                f"<b>Body:</b> {body_bytes} bytes</div>"
+            )
+        _log.warning("Issue creation failed: %s", out.get("reason", "unknown"))
+        return HTMLResponse("<div class='alert error'>&#x2717; Could not create issue. Check server logs.</div>")
+    except Exception:
+        _log.exception("Unhandled error in /issue endpoint")
+        return HTMLResponse("<div class='alert error'>&#x2717; Operation failed. Check server logs.</div>")
 
 
 @app.get("/report.md", response_class=PlainTextResponse)
