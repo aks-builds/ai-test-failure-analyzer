@@ -8,7 +8,7 @@ name: publish
 on:
   pull_request:
     types: [closed]
-    branches: [main]
+    branches: [master]
 
 permissions:
   contents: write
@@ -26,7 +26,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: main
+          ref: master
           fetch-depth: 0
 
       - uses: actions/setup-node@v4
@@ -72,7 +72,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: main
+          ref: master
 
       - uses: actions/setup-python@v5
         with:
@@ -96,7 +96,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: main
+          ref: master
           fetch-depth: 0
 
       - name: Configure git identity
@@ -129,4 +129,4 @@ jobs:
           gh release create "${{ needs.publish-npm.outputs.tag }}" \
             --title "${{ needs.publish-npm.outputs.tag }}" \
             --notes-file release-notes.md \
-            --target main $FLAG
+            --target master $FLAG

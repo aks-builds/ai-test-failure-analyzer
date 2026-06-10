@@ -34,7 +34,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: main
+          ref: master
           fetch-depth: 0
           token: ${{ secrets.RELEASE_PR_PAT }}
 
@@ -131,7 +131,7 @@ jobs:
           git add package.json pyproject.toml .claude-plugin/plugin.json .claude-plugin/marketplace.json CHANGELOG.md
           git commit -m "chore(release): ${{ steps.bump.outputs.version }}"
           git push origin "${{ steps.bump.outputs.branch }}"
-          PR_URL=$(gh pr create --base main --head "${{ steps.bump.outputs.branch }}" \
+          PR_URL=$(gh pr create --base master --head "${{ steps.bump.outputs.branch }}" \
             --title "chore(release): ${{ steps.bump.outputs.version }}" \
             --body-file release-notes.md)
           gh pr merge "$PR_URL" --auto --squash
