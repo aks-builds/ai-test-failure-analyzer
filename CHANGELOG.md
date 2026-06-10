@@ -5,6 +5,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) / [Semantic Ver
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-06-10
+
 ## [1.0.0] - 2026-06-14
 
 ### Added
