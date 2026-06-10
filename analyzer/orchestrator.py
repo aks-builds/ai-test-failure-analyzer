@@ -23,6 +23,8 @@ from .hypothesis import Hypothesis, form_hypotheses
 from .parsers import detect, parse
 from .render.markdown import render_markdown_report
 from .security import safe_path
+from .workspace_scanner import WorkspaceProfile, scan_workspace
+from .noise_filter import filter_hypotheses as _filter_hypotheses
 
 
 @dataclass
@@ -37,6 +39,9 @@ class AnalysisResult:
     hypotheses: list[Hypothesis]
     report_markdown: str
     elapsed_seconds: float
+    profile: WorkspaceProfile | None = None
+    suppressed_hypotheses: int = 0
+    no_app_fault: bool = False
 
 
 # An "ask" callback is what each UI provides for clarifying questions.
@@ -59,6 +64,7 @@ def analyze(
     results_path: str | Path,
     workspace: str | Path | None = None,
     framework: str = "auto",
+    mode: str = "auto",
     ask: AskFn | None = None,
     progress: Callable[[dict], None] | None = None,
 ) -> AnalysisResult:
@@ -68,6 +74,7 @@ def analyze(
         results_path: Path to the test results file (relative to workspace OK).
         workspace: Repo root. Defaults to CWD.
         framework: "auto" or one of the framework keys.
+        mode: "auto" (scan workspace) or "api-only" (force API_ONLY).
         ask: Callback for clarifying questions. Defaults to non-interactive.
         progress: Callback invoked with phase progress dicts.
     """
@@ -81,6 +88,18 @@ def analyze(
                 progress(event)
             except Exception:
                 pass
+
+    # ── Phase 0: Workspace scan ────────────────────────────────────────────────
+    emit({"phase": 0, "name": "Scan workspace", "status": "started"})
+    profile = scan_workspace(workspace, force_api_only=(mode == "api-only"))
+    emit({
+        "phase": 0, "name": "Scan workspace", "status": "completed",
+        "data": {
+            "mode": profile.mode,
+            "source_roots": [str(p) for p in profile.source_roots],
+            "noise_dirs": len(profile.noise_paths),
+        },
+    })
 
     # ── Phase 1: Collect failures ──────────────────────────────────────────
     emit({"phase": 1, "name": "Collect failures", "status": "started"})
@@ -141,8 +160,16 @@ def analyze(
 
     # ── Phase 7: Form hypotheses ───────────────────────────────────────────
     emit({"phase": 7, "name": "Form hypotheses", "status": "started"})
-    hypotheses = form_hypotheses(failures, clusters, correlation["matrix"], git, logs, config)
-    emit({"phase": 7, "name": "Form hypotheses", "status": "completed", "data": {"count": len(hypotheses)}})
+    hypotheses_raw = form_hypotheses(failures, clusters, correlation["matrix"], git, logs, config)
+    hypotheses, suppressed_count, no_app_fault = _filter_hypotheses(hypotheses_raw, profile)
+    emit({
+        "phase": 7, "name": "Form hypotheses", "status": "completed",
+        "data": {
+            "count": len(hypotheses),
+            "suppressed": suppressed_count,
+            "no_app_fault": no_app_fault,
+        },
+    })
 
     # ── Phase 8: Render report ─────────────────────────────────────────────
     elapsed = time.monotonic() - start
@@ -155,6 +182,8 @@ def analyze(
         config=config,
         framework=detected_fw,
         elapsed_seconds=elapsed,
+        profile=profile,
+        no_app_fault=no_app_fault,
     )
     emit({"phase": 8, "name": "Produce report", "status": "completed", "data": {"bytes": len(report_md)}})
 
@@ -169,4 +198,7 @@ def analyze(
         hypotheses=hypotheses,
         report_markdown=report_md,
         elapsed_seconds=elapsed,
+        profile=profile,
+        suppressed_hypotheses=suppressed_count,
+        no_app_fault=no_app_fault,
     )

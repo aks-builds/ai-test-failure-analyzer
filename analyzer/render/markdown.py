@@ -24,6 +24,8 @@ def render_markdown_report(
     framework: str = "",
     elapsed_seconds: float | None = None,
     run_url: str | None = None,
+    profile: Any | None = None,
+    no_app_fault: bool = False,
 ) -> str:
     failed = [f for f in failures if f.status == "failed"]
     passed = [f for f in failures if f.status == "passed"]
