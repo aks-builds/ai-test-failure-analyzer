@@ -28,7 +28,7 @@ app = typer.Typer(
 
 def _version_callback(value: bool) -> None:
     if value:
-        typer.echo(f"qa-test-failure-analyzer {__version__}")
+        typer.echo(f"ai-test-failure-analyzer {__version__}")
         raise typer.Exit()
 
 
@@ -44,6 +44,7 @@ def cmd_analyze(
     results: str = typer.Option("test-results/results.json", "--results", "-r", help="Path to test results file"),
     workspace: Optional[str] = typer.Option(None, "--workspace", "-w", help="Workspace root (defaults to CWD)"),
     framework: str = typer.Option("auto", "--framework", "-f", help="auto|playwright|pytest|jest|vitest|cypress|webdriverio|junit"),
+    mode: str = typer.Option("auto", "--mode", "-m", help="auto|api-only (force API_ONLY mode)"),
     non_interactive: bool = typer.Option(False, "--non-interactive", help="Disable clarifying questions"),
     create_issue: bool = typer.Option(False, "--create-issue", help="Create GitHub issue for top hypothesis"),
     repo: Optional[str] = typer.Option(None, "--repo", help="owner/repo for issue creation"),
@@ -57,6 +58,7 @@ def cmd_analyze(
         results_path=results,
         workspace=workspace,
         framework=framework,
+        mode=mode,
         non_interactive=non_interactive,
         create_issue=create_issue,
         repo=repo,
@@ -108,8 +110,8 @@ def cmd_web(
 def cmd_info() -> None:
     """Show server / framework info."""
     from . import __version__
-    typer.echo(f"qa-test-failure-analyzer {__version__}")
-    typer.echo("Supported frameworks: playwright, pytest, jest, vitest, cypress, webdriverio, junit")
+    typer.echo(f"ai-test-failure-analyzer {__version__}")
+    typer.echo("Supported frameworks: playwright, pytest, jest, vitest, cypress, webdriverio, junit, newman, k6")
     typer.echo("Transports: stdio, streamable-http")
 
 

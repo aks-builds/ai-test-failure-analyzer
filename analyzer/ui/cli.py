@@ -39,6 +39,7 @@ def run(
     results_path: str = "test-results/results.json",
     workspace: Optional[str] = None,
     framework: str = "auto",
+    mode: str = "auto",
     non_interactive: bool = False,
     create_issue: bool = False,
     repo: Optional[str] = None,
@@ -81,6 +82,7 @@ def run(
             results_path=results_path,
             workspace=ws,
             framework=framework,
+            mode=mode,
             ask=ask,
             progress=progress,
         )
