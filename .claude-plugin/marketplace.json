@@ -7,18 +7,25 @@
   },
   "metadata": {
     "description": "Root cause in seconds — evidence-driven test failure analysis by aks-builds.",
-    "version": "1.0.0"
+    "version": "1.0.1"
   },
   "plugins": [
     {
       "name": "ai-test-failure-analyzer",
       "source": "./",
       "description": "Analyze test failures with evidence from git, logs, and config. Supports Playwright, Jest, Cypress, Newman, k6, and JUnit. Evidence-driven root cause — no guesses, no fixture noise, no repeated wrong hypotheses.",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "license": "MIT",
       "keywords": [
-        "testing", "qa", "test-failure", "mcp",
-        "playwright", "jest", "cypress", "newman", "k6"
+        "testing",
+        "qa",
+        "test-failure",
+        "mcp",
+        "playwright",
+        "jest",
+        "cypress",
+        "newman",
+        "k6"
       ]
     }
   ]
