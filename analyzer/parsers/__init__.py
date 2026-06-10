@@ -1,8 +1,4 @@
-"""Parser registry with content-sniff dispatch.
-
-Use ``detect(path)`` to find the right parser, or ``parse(path, framework='auto')``
-to do everything in one call.
-"""
+"""Parser registry with content-sniff dispatch."""
 
 from __future__ import annotations
 
@@ -12,16 +8,17 @@ from .base import NormalizedFailure, Parser
 from .cypress_json import CypressJsonParser
 from .jest_json import JestJsonParser
 from .junit_generic import JUnitXmlParser
+from .k6_json import K6JsonParser
 from .newman_json import NewmanJsonParser
 from .playwright_json import PlaywrightJsonParser
 from .pytest_junit import PytestJUnitParser
 
-# Order matters: more specific parsers come first.
-# Newman before generic JSON parsers; PlaywrightJsonParser must come before
-# generic JUnit because both can match XML.
+# Order matters: most specific first.
+# Newman and k6 before generic JSON parsers; JUnit XML fallback is last.
 PARSERS: list[type[Parser]] = [
     PlaywrightJsonParser,
     NewmanJsonParser,
+    K6JsonParser,
     JestJsonParser,
     CypressJsonParser,
     PytestJUnitParser,
@@ -31,6 +28,7 @@ PARSERS: list[type[Parser]] = [
 FRAMEWORKS: dict[str, type[Parser]] = {
     "playwright": PlaywrightJsonParser,
     "newman": NewmanJsonParser,
+    "k6": K6JsonParser,
     "jest": JestJsonParser,
     "vitest": JestJsonParser,
     "cypress": CypressJsonParser,
@@ -38,6 +36,9 @@ FRAMEWORKS: dict[str, type[Parser]] = {
     "wdio": CypressJsonParser,
     "pytest": PytestJUnitParser,
     "junit": JUnitXmlParser,
+    "rest-assured": JUnitXmlParser,
+    "karate": JUnitXmlParser,
+    "insomnia": JUnitXmlParser,
 }
 
 

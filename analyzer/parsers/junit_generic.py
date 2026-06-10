@@ -5,12 +5,32 @@ JUnit-compatible XML.
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 from lxml import etree
 
 from ..security import cap_raw_record
 from .base import NormalizedFailure, Parser, make_failure_id, parse_assertion, parse_http
+
+_RA_EXPECTATION_RE = re.compile(r"\d+\s+expectation[s]?\s+failed", re.IGNORECASE)
+_RA_EXPECTED_RE = re.compile(r"Expected[:\s]+(.+)", re.IGNORECASE)
+_RA_ACTUAL_RE = re.compile(r"Actual[:\s]+(.+)", re.IGNORECASE)
+
+
+def _parse_rest_assured_error(msg: str | None, stack: str | None) -> tuple[str | None, str | None]:
+    """Extract expected/actual from REST Assured assertion messages.
+
+    REST Assured emits: "1 expectation failed.\nExpected: is <200>\n  Actual: 404"
+    """
+    blob = "\n".join(filter(None, (msg, stack))) or ""
+    if not _RA_EXPECTATION_RE.search(blob):
+        return None, None
+    exp_m = _RA_EXPECTED_RE.search(blob)
+    act_m = _RA_ACTUAL_RE.search(blob)
+    expected = exp_m.group(1).strip() if exp_m else None
+    actual = act_m.group(1).strip() if act_m else None
+    return expected, actual
 
 
 def _testcase_to_failure(tc: etree._Element, suite_name: str, framework: str) -> NormalizedFailure:
@@ -40,6 +60,9 @@ def _testcase_to_failure(tc: etree._Element, suite_name: str, framework: str) ->
         err_stack = None
 
     expected, actual = parse_assertion(err_msg, err_stack)
+    # REST Assured uses a different assertion format — try it if generic parser found nothing
+    if expected is None and actual is None:
+        expected, actual = _parse_rest_assured_error(err_msg, err_stack)
     http = parse_http(title, err_msg, err_stack)
 
     return NormalizedFailure(
