@@ -29,7 +29,7 @@ from .render.markdown import render_markdown_report
 
 # Single FastMCP instance — name shows up in the MCP client picker
 mcp = FastMCP(
-    "qa-test-failure-analyzer",
+    "ai-test-failure-analyzer",
     instructions=(
         "AI-assisted root-cause analysis for QA test failures. "
         "Supports Playwright, pytest, Jest/Vitest, and Cypress/WebdriverIO. "
@@ -381,7 +381,7 @@ async def list_questions() -> dict[str, Any]:
 async def server_info() -> dict[str, Any]:
     """Return server metadata — useful for debugging client integrations."""
     return {
-        "name": "qa-test-failure-analyzer",
+        "name": "ai-test-failure-analyzer",
         "version": __version__,
         "workspace": str(_workspace()),
         "frameworks_supported": ["playwright", "pytest", "jest", "vitest", "cypress", "webdriverio", "junit"],
