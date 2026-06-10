@@ -1,0 +1,20 @@
+{
+  "root_group": {
+    "name": "",
+    "checks": [
+      { "name": "status is 200", "passes": 45, "fails": 5 },
+      { "name": "response time < 500ms", "passes": 50, "fails": 0 }
+    ],
+    "groups": {}
+  },
+  "metrics": {
+    "http_req_duration": {
+      "type": "trend",
+      "values": { "avg": 312.4, "min": 89, "max": 1240, "p(90)": 580, "p(95)": 720.5 }
+    },
+    "http_req_failed": {
+      "type": "rate",
+      "values": { "rate": 0.1, "passes": 45, "fails": 5 }
+    }
+  }
+}
