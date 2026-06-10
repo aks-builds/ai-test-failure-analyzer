@@ -1,0 +1,35 @@
+{
+  "name": "ai-test-failure-analyzer",
+  "version": "1.0.0",
+  "description": "Root cause in seconds. Evidence, not intuition. Feed it a test result file — Playwright, Jest, Cypress, Newman, k6, or JUnit — and it traces back through your real git history, logs, and config to surface the actual fault. No guesses. No fixture noise.",
+  "bin": {
+    "ai-analyze": "bin/cli.js"
+  },
+  "files": [
+    "bin/",
+    "skills/",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "test": "node --test test/cli.test.js"
+  },
+  "keywords": [
+    "testing", "qa", "test-failure", "root-cause-analysis",
+    "mcp", "playwright", "jest", "cypress", "newman", "k6",
+    "cli", "developer-tools", "claude-code", "agent-skills"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aks-builds/ai-test-failure-analyzer.git"
+  },
+  "homepage": "https://github.com/aks-builds/ai-test-failure-analyzer#readme",
+  "bugs": {
+    "url": "https://github.com/aks-builds/ai-test-failure-analyzer/issues"
+  },
+  "author": "aks-builds",
+  "license": "MIT"
+}
