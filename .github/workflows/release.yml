@@ -1,0 +1,137 @@
+name: release
+
+# Manually-dispatched release-prep. Bumps version in package.json + pyproject.toml
+# + plugin manifests, rolls CHANGELOG.md, opens a release/* PR with auto-merge.
+# Once CI (the required `test` check) passes, the PR merges and publish.yml
+# ships to npm + PyPI + cuts a GitHub release.
+#
+# Required secrets:
+#   RELEASE_PR_PAT  — user PAT (repo scope). GITHUB_TOKEN cannot trigger CI.
+#   NPM_TOKEN       — consumed by publish.yml
+#   PYPI_TOKEN      — consumed by publish.yml
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: "Version bump"
+        required: true
+        type: choice
+        default: patch
+        options: [prerelease, patch, minor, major]
+      preid:
+        description: "Prerelease id (when bump = prerelease)"
+        required: false
+        default: alpha
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  open-release-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ secrets.RELEASE_PR_PAT }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Configure git identity
+        run: |
+          git config user.name "aks-builds"
+          git config user.email "its.aks@outlook.com"
+
+      - name: Run tests
+        run: |
+          pip install -e ".[dev]"
+          pytest -q
+          npm test
+
+      - name: Bump version in package.json
+        id: bump
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "${{ inputs.bump }}" = "prerelease" ]; then
+            RAW=$(npm version prerelease --preid "${{ inputs.preid }}" --no-git-tag-version)
+          else
+            RAW=$(npm version "${{ inputs.bump }}" --no-git-tag-version)
+          fi
+          VERSION="${RAW#v}"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "branch=release/v$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Sync version into pyproject.toml
+        shell: bash
+        run: |
+          python - <<'EOF'
+          import re, sys
+          v = "${{ steps.bump.outputs.version }}"
+          path = "pyproject.toml"
+          content = open(path).read()
+          updated = re.sub(r'^version = ".*?"', f'version = "{v}"', content, flags=re.MULTILINE)
+          open(path, "w").write(updated)
+          print(f"pyproject.toml -> {v}")
+          EOF
+
+      - name: Sync version into Claude marketplace manifests
+        shell: bash
+        run: |
+          node -e "
+            const fs = require('fs');
+            const v = '${{ steps.bump.outputs.version }}';
+            for (const p of ['.claude-plugin/plugin.json', '.claude-plugin/marketplace.json']) {
+              const j = JSON.parse(fs.readFileSync(p, 'utf8'));
+              if ('version' in j) j.version = v;
+              if (j.metadata && 'version' in j.metadata) j.metadata.version = v;
+              if (Array.isArray(j.plugins)) j.plugins.forEach(pl => { if ('version' in pl) pl.version = v; });
+              fs.writeFileSync(p, JSON.stringify(j, null, 2) + '\n');
+            }
+          "
+
+      - name: Roll CHANGELOG [Unreleased] -> [VERSION] - DATE
+        shell: bash
+        run: |
+          node -e "
+            const fs = require('fs');
+            const v = '${{ steps.bump.outputs.version }}';
+            const d = new Date().toISOString().slice(0, 10);
+            const p = 'CHANGELOG.md';
+            const c = fs.readFileSync(p, 'utf8');
+            const next = c.replace('## [Unreleased]', '## [Unreleased]\n\n## [' + v + '] - ' + d);
+            if (next !== c) fs.writeFileSync(p, next);
+          "
+
+      - name: Extract release notes
+        shell: bash
+        run: |
+          awk -v ver="${{ steps.bump.outputs.version }}" '
+            $0 ~ ("^## \\[" ver "\\]") { flag=1; next }
+            flag && /^## \[/ { exit }
+            flag { print }
+          ' CHANGELOG.md > release-notes.md
+          [ -s release-notes.md ] || echo "Release ${{ steps.bump.outputs.version }}." > release-notes.md
+
+      - name: Push release branch and open PR
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_PR_PAT }}
+        run: |
+          set -euo pipefail
+          git checkout -b "${{ steps.bump.outputs.branch }}"
+          git add package.json pyproject.toml .claude-plugin/plugin.json .claude-plugin/marketplace.json CHANGELOG.md
+          git commit -m "chore(release): ${{ steps.bump.outputs.version }}"
+          git push origin "${{ steps.bump.outputs.branch }}"
+          PR_URL=$(gh pr create --base main --head "${{ steps.bump.outputs.branch }}" \
+            --title "chore(release): ${{ steps.bump.outputs.version }}" \
+            --body-file release-notes.md)
+          gh pr merge "$PR_URL" --auto --squash
