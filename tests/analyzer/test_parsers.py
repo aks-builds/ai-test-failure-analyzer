@@ -105,3 +105,59 @@ def test_explicit_framework_override():
 def test_unknown_framework_raises():
     with pytest.raises(ValueError):
         parse(DEMO_RESULTS, framework="bogus-framework")
+
+
+def test_detect_newman():
+    from analyzer.parsers.newman_json import NewmanJsonParser
+    assert detect(FIXTURES / "newman_results.json") is NewmanJsonParser
+
+
+def test_parse_newman():
+    fw, failures = parse(FIXTURES / "newman_results.json")
+    assert fw == "newman"
+    assert isinstance(failures, list)
+    failed = [f for f in failures if f.status == "failed"]
+    assert len(failed) == 1
+    assert failed[0].title == "Create clip — Status code is 201"
+    assert failed[0].http is not None
+    assert failed[0].http["method"] == "POST"
+    assert failed[0].http["status_got"] == 404
+    assert failed[0].http["response_time_ms"] == 142
+    assert failed[0].file == ""
+    assert failed[0].line is None
+
+
+def test_parse_newman_passed_items_included():
+    _, failures = parse(FIXTURES / "newman_results.json")
+    passed = [f for f in failures if f.status == "passed"]
+    assert len(passed) == 1
+    assert passed[0].title == "List clips"
+
+
+def test_detect_k6():
+    from analyzer.parsers.k6_json import K6JsonParser
+    with open(FIXTURES / "k6_results.json", "rb") as f:
+        sample = f.read(4096)
+    assert K6JsonParser.can_parse(sample)
+
+
+def test_parse_k6():
+    from analyzer.parsers.k6_json import K6JsonParser
+    failures = K6JsonParser.parse(FIXTURES / "k6_results.json")
+    assert K6JsonParser.framework == "k6"
+    failed = [f for f in failures if f.status == "failed"]
+    assert len(failed) == 1
+    assert failed[0].title == "status is 200"
+    assert failed[0].suite == "k6 load test"
+    assert "5/50" in (failed[0].error_message or "")
+    assert failed[0].http is not None
+    assert failed[0].http["response_time_ms"] == 720  # int(720.5)
+    assert failed[0].file == ""
+    assert failed[0].line is None
+
+
+def test_parse_k6_passed_checks_excluded():
+    from analyzer.parsers.k6_json import K6JsonParser
+    failures = K6JsonParser.parse(FIXTURES / "k6_results.json")
+    # "response time < 500ms" has 0 fails — should not appear as a failed result
+    assert not any(f.title == "response time < 500ms" and f.status == "failed" for f in failures)

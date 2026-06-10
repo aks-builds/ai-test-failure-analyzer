@@ -1,0 +1,31 @@
+{
+  "collection": {
+    "info": { "name": "Clips API", "_postman_id": "abc123" },
+    "item": []
+  },
+  "run": {
+    "stats": { "assertions": { "total": 3, "failed": 1 } },
+    "executions": [
+      {
+        "item": { "name": "Create clip" },
+        "request": {
+          "method": "POST",
+          "url": { "raw": "https://api.example.com/api/clips", "host": "api.example.com", "path": ["api", "clips"] }
+        },
+        "response": { "code": 404, "responseTime": 142 },
+        "assertions": [
+          { "assertion": "Status code is 201", "error": { "name": "AssertionError", "message": "expected response to have status code 201 but got 404" } }
+        ]
+      },
+      {
+        "item": { "name": "List clips" },
+        "request": {
+          "method": "GET",
+          "url": { "raw": "https://api.example.com/api/clips", "host": "api.example.com", "path": ["api", "clips"] }
+        },
+        "response": { "code": 200, "responseTime": 89 },
+        "assertions": []
+      }
+    ]
+  }
+}

@@ -12,13 +12,16 @@ from .base import NormalizedFailure, Parser
 from .cypress_json import CypressJsonParser
 from .jest_json import JestJsonParser
 from .junit_generic import JUnitXmlParser
+from .newman_json import NewmanJsonParser
 from .playwright_json import PlaywrightJsonParser
 from .pytest_junit import PytestJUnitParser
 
 # Order matters: more specific parsers come first.
-# PlaywrightJsonParser must come before generic JUnit because both can match XML.
+# Newman before generic JSON parsers; PlaywrightJsonParser must come before
+# generic JUnit because both can match XML.
 PARSERS: list[type[Parser]] = [
     PlaywrightJsonParser,
+    NewmanJsonParser,
     JestJsonParser,
     CypressJsonParser,
     PytestJUnitParser,
@@ -27,6 +30,7 @@ PARSERS: list[type[Parser]] = [
 
 FRAMEWORKS: dict[str, type[Parser]] = {
     "playwright": PlaywrightJsonParser,
+    "newman": NewmanJsonParser,
     "jest": JestJsonParser,
     "vitest": JestJsonParser,
     "cypress": CypressJsonParser,
