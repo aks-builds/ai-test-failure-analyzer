@@ -1,0 +1,132 @@
+name: publish
+
+# Fires when a release/* PR merges into main.
+# Publishes to npm (with provenance) + PyPI, then tags and cuts a GitHub release.
+#
+# Required secrets: NPM_TOKEN, PYPI_TOKEN
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+
+permissions:
+  contents: write
+  id-token: write   # npm provenance (sigstore)
+
+jobs:
+  publish-npm:
+    if: github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'release/')
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.ver.outputs.version }}
+      tag: ${{ steps.ver.outputs.tag }}
+      disttag: ${{ steps.ver.outputs.disttag }}
+      prerelease: ${{ steps.ver.outputs.prerelease }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Configure git identity
+        run: |
+          git config user.name "aks-builds"
+          git config user.email "its.aks@outlook.com"
+
+      - name: Resolve version identifiers
+        id: ver
+        shell: bash
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          if printf '%s' "$VERSION" | grep -q -- '-'; then
+            DISTTAG=alpha; PRERELEASE=true
+          else
+            DISTTAG=latest; PRERELEASE=false
+          fi
+          echo "version=$VERSION"       >> "$GITHUB_OUTPUT"
+          echo "tag=v$VERSION"          >> "$GITHUB_OUTPUT"
+          echo "disttag=$DISTTAG"       >> "$GITHUB_OUTPUT"
+          echo "prerelease=$PRERELEASE" >> "$GITHUB_OUTPUT"
+
+      - name: Abort if tag already exists
+        shell: bash
+        run: |
+          if git rev-parse "refs/tags/${{ steps.ver.outputs.tag }}" >/dev/null 2>&1; then
+            echo "Tag ${{ steps.ver.outputs.tag }} already exists — nothing to do."; exit 1
+          fi
+
+      - name: Publish to npm
+        run: npm publish --access public --tag ${{ steps.ver.outputs.disttag }} --provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  publish-pypi:
+    needs: [publish-npm]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install build tools
+        run: pip install build twine
+
+      - name: Build distribution
+        run: python -m build
+
+      - name: Publish to PyPI
+        run: twine upload dist/* --non-interactive
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
+
+  github-release:
+    needs: [publish-npm, publish-pypi]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Configure git identity
+        run: |
+          git config user.name "aks-builds"
+          git config user.email "its.aks@outlook.com"
+
+      - name: Extract release notes
+        shell: bash
+        run: |
+          awk -v ver="${{ needs.publish-npm.outputs.version }}" '
+            $0 ~ ("^## \\[" ver "\\]") { flag=1; next }
+            flag && /^## \[/ { exit }
+            flag { print }
+          ' CHANGELOG.md > release-notes.md
+          [ -s release-notes.md ] || echo "Release ${{ needs.publish-npm.outputs.version }}." > release-notes.md
+
+      - name: Tag and push
+        run: |
+          git tag "${{ needs.publish-npm.outputs.tag }}"
+          git push origin "${{ needs.publish-npm.outputs.tag }}"
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          FLAG=""
+          [ "${{ needs.publish-npm.outputs.prerelease }}" = "true" ] && FLAG="--prerelease"
+          gh release create "${{ needs.publish-npm.outputs.tag }}" \
+            --title "${{ needs.publish-npm.outputs.tag }}" \
+            --notes-file release-notes.md \
+            --target main $FLAG
