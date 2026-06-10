@@ -9,11 +9,14 @@ Loopback only by default. Routes:
 
 from __future__ import annotations
 
+import logging
 import threading
 import webbrowser
 from html import escape
 from pathlib import Path
 from typing import Any
+
+_log = logging.getLogger(__name__)
 
 from fastapi import FastAPI, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse
@@ -61,14 +64,15 @@ async def do_analyze(
             ask=None,
             progress=None,
         )
-    except FileNotFoundError as e:
+    except FileNotFoundError:
         return HTMLResponse(
-            f"<div class='alert error'>✗ {escape(str(e))}</div>",
+            "<div class='alert error'>&#x2717; Test results file not found. Check the path and try again.</div>",
             status_code=200,
         )
-    except Exception as e:
+    except Exception:
+        _log.exception("Analysis failed for request from web UI")
         return HTMLResponse(
-            f"<div class='alert error'>✗ Analysis failed: {escape(str(e))}</div>",
+            "<div class='alert error'>&#x2717; Analysis failed. Check server logs for details.</div>",
             status_code=200,
         )
 
@@ -101,19 +105,23 @@ async def do_issue(
     out = create_issue_from_hypothesis(repo=repo, hypothesis=hyp, dry_run=is_dry)
 
     if out.get("created"):
+        safe_url = escape(str(out.get("url", "")))
         return HTMLResponse(
-            f"<div class='alert success'>✓ Issue created: <a href='{escape(out['url'])}' target='_blank'>{escape(out['url'])}</a></div>"
+            f"<div class='alert success'>&#x2713; Issue created: "
+            f"<a href='{safe_url}' target='_blank' rel='noopener noreferrer'>{safe_url}</a></div>"
         )
     if out.get("dry_run"):
         wc = out["would_create"]
+        body_bytes = int(wc.get("body_bytes", 0))
         return HTMLResponse(
             f"<div class='alert info'>Dry-run preview:<br>"
-            f"<b>Repo:</b> {escape(wc['repo'])}<br>"
-            f"<b>Title:</b> {escape(wc['title'])}<br>"
-            f"<b>Labels:</b> {escape(', '.join(wc['labels']))}<br>"
-            f"<b>Body:</b> {wc['body_bytes']} bytes</div>"
+            f"<b>Repo:</b> {escape(str(wc.get('repo', '')))}<br>"
+            f"<b>Title:</b> {escape(str(wc.get('title', '')))}<br>"
+            f"<b>Labels:</b> {escape(', '.join(str(l) for l in wc.get('labels', [])))}<br>"
+            f"<b>Body:</b> {body_bytes} bytes</div>"
         )
-    return HTMLResponse(f"<div class='alert error'>✗ {escape(out.get('reason', 'failed'))}</div>")
+    _log.warning("Issue creation failed: %s", out.get("reason", "unknown"))
+    return HTMLResponse("<div class='alert error'>&#x2717; Could not create issue. Check server logs.</div>")
 
 
 @app.get("/report.md", response_class=PlainTextResponse)

@@ -7,6 +7,7 @@ making the codebase paranoid — each guard documents what it protects against.
 
 from __future__ import annotations
 
+import os
 import re
 from pathlib import Path
 
@@ -32,18 +33,17 @@ def safe_path(root: str | Path, candidate: str | Path) -> Path:
 
     Protects against path traversal (``../../etc/passwd``) and symlinks pointing
     outside the workspace. Returns the resolved absolute path on success.
+
+    Uses os.path.realpath + os.sep prefix check — the pattern recognised by
+    static-analysis tools (CWE-022) as a path-injection sanitiser.
     """
-    root_p = Path(root).resolve()
-    cand_p = (root_p / candidate).resolve() if not Path(candidate).is_absolute() else Path(candidate).resolve()
-
-    try:
-        cand_p.relative_to(root_p)
-    except ValueError as e:
-        raise SecurityError(f"path '{candidate}' escapes workspace root '{root_p}'") from e
-
-    # Reject symlinks whose target leaves the root (resolve() already followed them,
-    # but the check above is on the resolved path — that is sufficient).
-    return cand_p
+    root_abs = os.path.realpath(str(root))
+    # Always join with root first. For absolute candidates os.path.join returns
+    # the candidate unchanged, but realpath + startswith below still catches it.
+    joined = os.path.realpath(os.path.join(root_abs, str(candidate)))
+    if joined != root_abs and not joined.startswith(root_abs + os.sep):
+        raise SecurityError(f"path '{candidate}' escapes workspace root '{root_abs}'")
+    return Path(joined)
 
 
 def validate_git_args(args: list[str]) -> list[str]:

@@ -103,22 +103,21 @@ def analyze(
 
     # ── Phase 1: Collect failures ──────────────────────────────────────────
     emit({"phase": 1, "name": "Collect failures", "status": "started"})
-    results_path = safe_path(workspace, results_path)
-    if not results_path.exists():
-        # Ask the user where the file is
+    # safe_results_path is the sanitised form — keeps CodeQL's taint tracking clean.
+    safe_results_path = safe_path(workspace, results_path)
+    if not safe_results_path.exists():
         new = ask("results_path_missing")
         if new:
-            results_path = safe_path(workspace, new)
-    if not results_path.exists():
-        raise FileNotFoundError(f"Test results not found: {results_path}")
+            safe_results_path = safe_path(workspace, new)
+    if not safe_results_path.exists():
+        raise FileNotFoundError("Test results file not found.")
 
     if framework == "auto":
-        detected = detect(results_path)
+        detected = detect(safe_results_path)
         if detected is None:
-            # Ask the user
             framework = ask("framework_ambiguous") or "playwright"
 
-    detected_fw, failures = parse(results_path, framework=framework)
+    detected_fw, failures = parse(safe_results_path, framework=framework)
     emit({
         "phase": 1, "name": "Collect failures", "status": "completed",
         "data": {
