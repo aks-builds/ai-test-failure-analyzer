@@ -1,40 +1,30 @@
 name: CI
 
-# Verifies the analyzer Python package — installs, runs unit tests.
-# Playwright tests live in the companion repo:
-#   github.com/aks-builds/playwright-userauth-api-suite
-
 on:
   push:
     branches: [main, master]
   pull_request:
-  workflow_dispatch:
-    inputs:
-      results_url:
-        description: "URL to a test-results JSON file (optional — runs analyzer if provided)"
-        required: false
-        default: ""
+    branches: [main, master]
 
 permissions:
   contents: read
-  issues: write
 
 jobs:
-  test:
+  test-matrix:
+    name: test-matrix
     runs-on: ubuntu-latest
-    timeout-minutes: 10
-
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 50
+      - uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
-          cache: "pip"
+          python-version: ${{ matrix.python-version }}
+          cache: pip
 
       - name: Install package
         run: pip install -e ".[dev]"
@@ -42,28 +32,28 @@ jobs:
       - name: Run unit tests
         run: pytest tests/analyzer -q
 
-      # ── On-demand analysis (workflow_dispatch with results_url) ───────────
-      - name: Download external results
-        if: inputs.results_url != ''
-        run: curl -fsSL "${{ inputs.results_url }}" -o test-results.json
-
-      - name: Analyze provided results
-        if: inputs.results_url != ''
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
+  # Stable aggregate gate — branch protection requires this fixed name,
+  # not the per-version matrix names.
+  test:
+    name: test
+    needs: [test-matrix]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require all matrix jobs to succeed
         run: |
-          analyzer analyze \
-            --results test-results.json \
-            --non-interactive \
-            --format markdown \
-            --out analysis.md
+          if [ "${{ needs.test-matrix.result }}" != "success" ]; then
+            echo "test-matrix result: ${{ needs.test-matrix.result }}"
+            exit 1
+          fi
 
-      - name: Upload analysis artifact
-        if: inputs.results_url != ''
-        uses: actions/upload-artifact@v4
+  cli:
+    name: cli
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
-          name: analysis
-          path: analysis.md
-          if-no-files-found: ignore
-          retention-days: 14
+          node-version: "20"
+      - name: Run CLI smoke tests
+        run: npm test
