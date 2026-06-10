@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="920" height="440" xmlns="http://www.w3.org/2000/svg">
+<style>
+@font-face {
+  font-family: "JetBrains Mono";
+  src: local("JetBrains Mono"), local("Fira Code"), local("Cascadia Code"), local("Consolas");
+}
+* { box-sizing: border-box; }
+</style>
+
+<!-- Window background -->
+<rect width="920" height="440" rx="12" ry="12" fill="#1a1f2e"/>
+
+<!-- Title bar -->
+<rect width="920" height="40" rx="12" ry="12" fill="#2d3748"/>
+<rect y="28" width="920" height="12" fill="#2d3748"/>
+
+<!-- Traffic lights -->
+<circle cx="22" cy="20" r="6" fill="#ff5f57"/>
+<circle cx="42" cy="20" r="6" fill="#febc2e"/>
+<circle cx="62" cy="20" r="6" fill="#28c840"/>
+
+<!-- Terminal text -->
+<text font-family="JetBrains Mono, Fira Code, Cascadia Code, Consolas, monospace" font-size="13.5" fill="#e2e8f0">
+
+  <!-- Prompt + command -->
+  <tspan x="28" dy="62" fill="#68d391">$ </tspan><tspan fill="#e2e8f0">ai-analyze analyze playwright-report.json</tspan>
+
+  <!-- Blank line -->
+  <tspan x="28" dy="22" fill="#718096">ai-test-failure-analyzer v1.0.1 &#xB7; FULL_SOURCE mode</tspan>
+  <tspan x="28" dy="18" fill="#4a5568">&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;</tspan>
+
+  <!-- Phase 1 -->
+  <tspan x="28" dy="22" fill="#90cdf4">Phase 1  </tspan><tspan fill="#718096">Parsing results........  </tspan><tspan fill="#68d391">3 failures &#xB7; Playwright</tspan>
+  <!-- Phase 2 -->
+  <tspan x="28" dy="20" fill="#90cdf4">Phase 2  </tspan><tspan fill="#718096">Reading test intent....  </tspan><tspan fill="#68d391">POST /api/clips, GET /api/clips/:id</tspan>
+  <!-- Phase 3 -->
+  <tspan x="28" dy="20" fill="#90cdf4">Phase 3  </tspan><tspan fill="#718096">Scanning git history...  </tspan><tspan fill="#68d391">14 commits &#xB7; 2 high-risk flagged</tspan>
+  <!-- Phase 4 -->
+  <tspan x="28" dy="20" fill="#90cdf4">Phase 4  </tspan><tspan fill="#718096">Scanning logs..........  </tspan><tspan fill="#f6ad55">4 ERROR lines &#xB7; app.log</tspan>
+  <!-- Phase 5 -->
+  <tspan x="28" dy="20" fill="#90cdf4">Phase 5  </tspan><tspan fill="#718096">Reading config.........  </tspan><tspan fill="#68d391">.env &#xB7; docker-compose.yml</tspan>
+  <!-- Phase 6 -->
+  <tspan x="28" dy="20" fill="#90cdf4">Phase 6  </tspan><tspan fill="#718096">Correlating evidence...  </tspan><tspan fill="#68d391">2 clusters &#xB7; 1 noise item filtered</tspan>
+  <!-- Phase 7 -->
+  <tspan x="28" dy="20" fill="#90cdf4">Phase 7  </tspan><tspan fill="#718096">Forming hypotheses.....  </tspan><tspan fill="#68d391">1 confirmed &#xB7; 1 suppressed (no Tier-1)</tspan>
+  <!-- Phase 8 -->
+  <tspan x="28" dy="20" fill="#90cdf4">Phase 8  </tspan><tspan fill="#718096">Rendering report.......  </tspan><tspan fill="#68d391">done</tspan>
+
+  <tspan x="28" dy="18" fill="#4a5568">&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;</tspan>
+
+  <!-- Root cause -->
+  <tspan x="28" dy="22" fill="#fbd38d" font-weight="bold">Root Cause  [92%]  </tspan><tspan fill="#fbd38d">api/routes.py:44</tspan>
+  <tspan x="28" dy="20" fill="#718096">  Endpoint renamed  </tspan><tspan fill="#fc8181">/api/clips</tspan><tspan fill="#718096">  &#x2192;  </tspan><tspan fill="#68d391">/api/v2/clips</tspan><tspan fill="#718096">  (commit a3f9b2, 2d ago)</tspan>
+  <tspan x="28" dy="20" fill="#718096">  Evidence: git diff + app.log ERROR 404 at 14:32 + .env BASE_URL unchanged</tspan>
+
+  <!-- Next step -->
+  <tspan x="28" dy="22" fill="#b794f4">  Next:  </tspan><tspan fill="#e2e8f0">update test baseURL  </tspan><tspan fill="#718096">or</tspan><tspan fill="#e2e8f0">  revert route rename</tspan>
+  <tspan x="28" dy="18" fill="#4a5568">&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;</tspan>
+</text>
+</svg>
