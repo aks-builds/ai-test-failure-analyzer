@@ -38,6 +38,15 @@ def render_markdown_report(
         lines.append(f"_CI run: {run_url}_")
     lines.append("")
 
+    # Mode banner
+    if profile is not None:
+        if profile.mode == "API_ONLY":
+            lines.append("> **API_ONLY mode** — no workspace source detected. Analyzing HTTP contract only.")
+        else:
+            src = ", ".join(p.name for p in profile.source_roots[:4]) if profile.source_roots else "—"
+            lines.append(f"> **FULL_SOURCE mode** — scanned `{src}`, git history, logs, config.")
+        lines.append("")
+
     # Summary
     lines.append("## Summary")
     lines.append("")
@@ -71,7 +80,16 @@ def render_markdown_report(
     lines.append("## Root-Cause Hypotheses")
     lines.append("")
     if not hypotheses:
-        lines.append("_No hypotheses generated. Either no failures, or insufficient signal to cluster._")
+        if no_app_fault:
+            lines.append(
+                "> ⚠ **No application-layer fault detected.** "
+                "All candidate hypotheses were suppressed: either they lacked Tier-1 evidence "
+                "(git/logs/config), or they matched fixture paths/intentional-failure markers. "
+                "Check that the workspace contains source directories (`src/`, `app/`, `lib/`, `api/`) "
+                "and that logs or git history cover the test run window."
+            )
+        else:
+            lines.append("_No hypotheses generated. Either no failures, or insufficient signal to cluster._")
     for h in hypotheses:
         lines.append(f"### {h.cluster_id} — {h.title}")
         lines.append("")
@@ -106,8 +124,8 @@ def render_markdown_report(
     lines.append("---")
     lines.append("")
     lines.append(
-        "_This analysis was produced by the [QA Test Failure Analyzer MCP server]"
-        "(https://github.com/nashtech/ai-test-failure-analyzer)._"
+        "_This analysis was produced by the [ai-test-failure-analyzer]"
+        "(https://github.com/aks-builds/ai-test-failure-analyzer)._"
     )
     return "\n".join(lines)
 
