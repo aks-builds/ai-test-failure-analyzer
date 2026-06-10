@@ -1,0 +1,25 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "ai-test-failure-analyzer",
+  "owner": {
+    "name": "aks-builds",
+    "url": "https://github.com/aks-builds"
+  },
+  "metadata": {
+    "description": "Root cause in seconds — evidence-driven test failure analysis by aks-builds.",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "ai-test-failure-analyzer",
+      "source": "./",
+      "description": "Analyze test failures with evidence from git, logs, and config. Supports Playwright, Jest, Cypress, Newman, k6, and JUnit. Evidence-driven root cause — no guesses, no fixture noise, no repeated wrong hypotheses.",
+      "version": "1.0.0",
+      "license": "MIT",
+      "keywords": [
+        "testing", "qa", "test-failure", "mcp",
+        "playwright", "jest", "cypress", "newman", "k6"
+      ]
+    }
+  ]
+}
