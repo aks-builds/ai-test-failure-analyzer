@@ -41,9 +41,9 @@ _last_result: dict[str, Any] = {"result": None}
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request) -> HTMLResponse:
     return templates.TemplateResponse(
+        request,
         "dashboard.html",
         {
-            "request": request,
             "default_results_path": "test-results/results.json",
             "default_repo": detect_default_repo() or "",
             "has_token": bool(github_token()),
@@ -78,9 +78,9 @@ async def do_analyze(
 
     _last_result["result"] = result
     return templates.TemplateResponse(
+        request,
         "_report.html",
         {
-            "request": request,
             "result": result,
             "failures_failed": [f for f in result.failures if f.status == "failed"],
             "default_repo": detect_default_repo() or github_repository() or "",

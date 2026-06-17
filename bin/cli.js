@@ -146,7 +146,10 @@ function main() {
       return 1;
     }
     ensureAnalyzer(py);
-    const r = spawnSync(py, ["-m", "analyzer", ...argv], { stdio: "inherit" });
+    const r = spawnSync(py, ["-m", "analyzer", ...argv], {
+      stdio: "inherit",
+      env: { ...process.env, PYTHONUTF8: "1" },
+    });
     return r.status === null ? 1 : r.status;
   }
 
