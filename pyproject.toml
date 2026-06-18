@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ai-test-failure-analyzer"
-version = "1.0.1"
+version = "1.0.2"
 description = "Root cause in seconds. Evidence, not intuition. Analyzes Playwright, Jest, Cypress, Newman, k6, and JUnit test failures by tracing git history, logs, and config. No guesses, no fixture noise."
 readme = "README.md"
 requires-python = ">=3.10,<3.15"
