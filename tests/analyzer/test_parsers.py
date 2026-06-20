@@ -185,3 +185,32 @@ def test_normalized_failure_new_fields_set():
     assert f.flakiness_score == 0.75
     assert f.flakiness_category == "ID"
     assert f.ctrf_extra == {"foo": "bar"}
+
+
+# ── ParserRegistry ────────────────────────────────────────────────────────────
+
+
+def test_parser_registry_detect_playwright(tmp_path):
+    """Registry detect() must return PlaywrightJsonParser for a playwright file."""
+    import json
+    from analyzer.parsers.registry import ParserRegistry
+    from analyzer.parsers.playwright_json import PlaywrightJsonParser
+
+    # Playwright JSON shape requires "config", "suites", and "specs" keys.
+    report = {
+        "config": {},
+        "suites": [{"title": "suite", "specs": []}],
+        "stats": {},
+    }
+    p = tmp_path / "results.json"
+    p.write_text(json.dumps(report))
+    result = ParserRegistry.detect(p)
+    assert result is PlaywrightJsonParser
+
+
+def test_parser_registry_unknown_returns_none(tmp_path):
+    from analyzer.parsers.registry import ParserRegistry
+    p = tmp_path / "unknown.json"
+    p.write_text('{"foo": "bar"}')
+    result = ParserRegistry.detect(p)
+    assert result is None

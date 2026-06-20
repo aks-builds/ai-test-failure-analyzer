@@ -90,4 +90,19 @@ def parse(path: Path, framework: str = "auto") -> tuple[str, list[NormalizedFail
     return cls.framework, cls.parse(path)
 
 
-__all__ = ["NormalizedFailure", "Parser", "PARSERS", "FRAMEWORKS", "detect", "parse"]
+from .registry import ParserRegistry
+
+# Register all existing parsers in detection-priority order (most specific first).
+ParserRegistry.register(PlaywrightJsonParser)
+ParserRegistry.register(NewmanJsonParser,  aliases=["newman"])
+ParserRegistry.register(K6JsonParser,      aliases=["k6"])
+ParserRegistry.register(JestJsonParser,    aliases=["jest", "vitest"])
+ParserRegistry.register(CypressJsonParser, aliases=["cypress", "webdriverio", "wdio"])
+ParserRegistry.register(PytestJUnitParser, aliases=["pytest"])
+ParserRegistry.register(JUnitXmlParser,    aliases=["junit", "rest-assured", "karate", "insomnia"])
+
+__all__ = [
+    "NormalizedFailure", "Parser",
+    "PARSERS", "FRAMEWORKS", "detect", "parse",
+    "ParserRegistry",
+]
