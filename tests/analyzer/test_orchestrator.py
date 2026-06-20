@@ -51,3 +51,37 @@ def test_analyze_creates_dry_run_issue(monkeypatch):
     assert out["dry_run"] is True
     assert "would_create" in out
     assert out["would_create"]["repo"] == "example/repo"
+
+
+def test_orchestrator_end_to_end_playwright(tmp_path):
+    """Full analysis on playwright fixture must produce hypotheses and phase_timings."""
+    import shutil
+    from pathlib import Path
+
+    fixture = Path(__file__).parent / "fixtures" / "playwright_results.json"
+    dest = tmp_path / "results.json"
+    shutil.copy(fixture, dest)
+
+    result = analyze(str(dest), workspace=str(tmp_path))
+
+    assert result.framework == "playwright"
+    assert isinstance(result.hypotheses, list)
+    assert isinstance(result.report_markdown, str)
+    assert len(result.report_markdown) > 0
+    assert isinstance(result.phase_timings, dict)
+    # Phase 5.5 timing key must be present (contains "collect")
+    assert any("collect" in k for k in result.phase_timings)
+
+
+def test_orchestrator_end_to_end_pytest_junit(tmp_path):
+    """Full analysis on pytest JUnit fixture must succeed."""
+    import shutil
+    from pathlib import Path
+
+    fixture = Path(__file__).parent / "fixtures" / "pytest_junit.xml"
+    dest = tmp_path / "results.xml"
+    shutil.copy(fixture, dest)
+
+    result = analyze(str(dest), workspace=str(tmp_path))
+    assert result.framework in ("pytest", "junit")
+    assert isinstance(result.report_markdown, str)
