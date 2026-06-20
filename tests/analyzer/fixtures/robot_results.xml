@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<robot generator="Robot 6.1.1" generated="20240115 10:00:00.000">
+  <suite name="API Tests" source="tests/api_tests.robot">
+    <test name="Create User Returns 201" id="s1-t1">
+      <kw name="POST" library="RequestsLibrary">
+        <msg timestamp="20240115 10:00:01.000" level="FAIL">AssertionError: 404 != 201</msg>
+      </kw>
+      <status status="FAIL" starttime="20240115 10:00:00.000" endtime="20240115 10:00:01.234">
+        AssertionError: 404 != 201
+      </status>
+    </test>
+    <test name="Get User Returns 200" id="s1-t2">
+      <status status="PASS" starttime="20240115 10:00:02.000" endtime="20240115 10:00:02.500"/>
+    </test>
+  </suite>
+  <statistics/>
+  <errors/>
+</robot>

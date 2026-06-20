@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit version="10.5.0">
+  <testsuites>
+    <testsuite name="App\Tests\UserControllerTest" tests="2" failures="1" errors="0" time="0.234">
+      <testcase name="testCreateUserReturns201" class="App\Tests\UserControllerTest" file="tests/UserControllerTest.php" line="15" time="0.123">
+        <failure type="PHPUnit\Framework\ExpectationFailedException">Failed asserting that 404 matches expected 201.</failure>
+      </testcase>
+      <testcase name="testGetUserReturns200" class="App\Tests\UserControllerTest" file="tests/UserControllerTest.php" line="30" time="0.111"/>
+    </testsuite>
+  </testsuites>
+</phpunit>

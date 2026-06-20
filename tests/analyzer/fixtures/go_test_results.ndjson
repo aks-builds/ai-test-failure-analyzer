@@ -1,0 +1,6 @@
+{"Time":"2024-01-15T10:00:00Z","Action":"run","Package":"github.com/example/api","Test":"TestCreateUser"}
+{"Time":"2024-01-15T10:00:00Z","Action":"output","Package":"github.com/example/api","Test":"TestCreateUser","Output":"--- FAIL: TestCreateUser (0.12s)\n"}
+{"Time":"2024-01-15T10:00:00Z","Action":"output","Package":"github.com/example/api","Test":"TestCreateUser","Output":"    api_test.go:45: expected status 201, got 404\n"}
+{"Time":"2024-01-15T10:00:00Z","Action":"fail","Package":"github.com/example/api","Test":"TestCreateUser","Elapsed":0.12}
+{"Time":"2024-01-15T10:00:01Z","Action":"run","Package":"github.com/example/api","Test":"TestGetUser"}
+{"Time":"2024-01-15T10:00:01Z","Action":"pass","Package":"github.com/example/api","Test":"TestGetUser","Elapsed":0.05}

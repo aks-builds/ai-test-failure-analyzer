@@ -289,3 +289,102 @@ def test_mocha_parse_returns_failures(fixtures):
     assert len(failed) == 1
     assert "POST /users" in failed[0].title
     assert failed[0].framework == "mocha"
+
+
+# ── Go test JSON ──────────────────────────────────────────────────────────────
+
+def test_go_test_can_parse(fixtures):
+    from analyzer.parsers.go_test_json import GoTestJsonParser
+    assert GoTestJsonParser.can_parse((fixtures / "go_test_results.ndjson").read_bytes())
+
+
+def test_go_test_cannot_parse_json_object(fixtures):
+    from analyzer.parsers.go_test_json import GoTestJsonParser
+    assert not GoTestJsonParser.can_parse(b'{"testResults": []}')
+
+
+def test_go_test_parse_returns_failures(fixtures):
+    from analyzer.parsers.go_test_json import GoTestJsonParser
+    results = GoTestJsonParser.parse(fixtures / "go_test_results.ndjson")
+    failed = [r for r in results if r.status == "failed"]
+    assert len(failed) == 1
+    assert "TestCreateUser" in failed[0].title
+    assert failed[0].framework == "go"
+    assert "404" in (failed[0].error_message or "")
+
+
+# ── RSpec ─────────────────────────────────────────────────────────────────────
+
+def test_rspec_can_parse(fixtures):
+    from analyzer.parsers.rspec_json import RSpecJsonParser
+    assert RSpecJsonParser.can_parse((fixtures / "rspec_results.json").read_bytes())
+
+
+def test_rspec_parse_returns_failures(fixtures):
+    from analyzer.parsers.rspec_json import RSpecJsonParser
+    results = RSpecJsonParser.parse(fixtures / "rspec_results.json")
+    failed = [r for r in results if r.status == "failed"]
+    assert len(failed) == 1
+    assert failed[0].framework == "rspec"
+    assert failed[0].line == 12
+
+
+# ── PHPUnit ───────────────────────────────────────────────────────────────────
+
+def test_phpunit_can_parse(fixtures):
+    from analyzer.parsers.phpunit_xml import PHPUnitXmlParser
+    assert PHPUnitXmlParser.can_parse((fixtures / "phpunit_results.xml").read_bytes())
+
+
+def test_phpunit_parse_returns_failures(fixtures):
+    from analyzer.parsers.phpunit_xml import PHPUnitXmlParser
+    results = PHPUnitXmlParser.parse(fixtures / "phpunit_results.xml")
+    failed = [r for r in results if r.status == "failed"]
+    assert len(failed) == 1
+    assert failed[0].framework == "phpunit"
+
+
+# ── NUnit ─────────────────────────────────────────────────────────────────────
+
+def test_nunit_can_parse(fixtures):
+    from analyzer.parsers.nunit_xml import NUnitXmlParser
+    assert NUnitXmlParser.can_parse((fixtures / "nunit_results.xml").read_bytes())
+
+
+def test_nunit_parse_returns_failures(fixtures):
+    from analyzer.parsers.nunit_xml import NUnitXmlParser
+    results = NUnitXmlParser.parse(fixtures / "nunit_results.xml")
+    failed = [r for r in results if r.status == "failed"]
+    assert len(failed) == 1
+    assert failed[0].framework == "nunit"
+
+
+# ── xUnit ─────────────────────────────────────────────────────────────────────
+
+def test_xunit_can_parse(fixtures):
+    from analyzer.parsers.xunit_xml import XUnitXmlParser
+    assert XUnitXmlParser.can_parse((fixtures / "xunit_results.xml").read_bytes())
+
+
+def test_xunit_parse_returns_failures(fixtures):
+    from analyzer.parsers.xunit_xml import XUnitXmlParser
+    results = XUnitXmlParser.parse(fixtures / "xunit_results.xml")
+    failed = [r for r in results if r.status == "failed"]
+    assert len(failed) == 1
+    assert failed[0].framework == "xunit"
+
+
+# ── Robot Framework ───────────────────────────────────────────────────────────
+
+def test_robot_can_parse(fixtures):
+    from analyzer.parsers.robot_xml import RobotXmlParser
+    assert RobotXmlParser.can_parse((fixtures / "robot_results.xml").read_bytes())
+
+
+def test_robot_parse_returns_failures(fixtures):
+    from analyzer.parsers.robot_xml import RobotXmlParser
+    results = RobotXmlParser.parse(fixtures / "robot_results.xml")
+    failed = [r for r in results if r.status == "failed"]
+    assert len(failed) == 1
+    assert "Create User" in failed[0].title
+    assert failed[0].framework == "robot"

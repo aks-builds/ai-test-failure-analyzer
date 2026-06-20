@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<assemblies>
+  <assembly name="MyTests.dll" run-date="2024-01-15" run-time="10:00:00" total="2" passed="1" failed="1" time="0.45">
+    <collection name="Test collection" total="2" passed="1" failed="1" time="0.45">
+      <test name="MyTests.UserTests.CreateUser_Returns201" type="MyTests.UserTests" method="CreateUser_Returns201" time="0.23" result="Fail">
+        <failure exception-type="Xunit.Sdk.EqualException">
+          <message>Assert.Equal() Failure: Values differ. Expected: 201. Actual: 404</message>
+          <stack-trace>at MyTests.UserTests.CreateUser_Returns201() in UserTests.cs:line 18</stack-trace>
+        </failure>
+      </test>
+      <test name="MyTests.UserTests.GetUser_Returns200" type="MyTests.UserTests" method="GetUser_Returns200" time="0.22" result="Pass"/>
+    </collection>
+  </assembly>
+</assemblies>

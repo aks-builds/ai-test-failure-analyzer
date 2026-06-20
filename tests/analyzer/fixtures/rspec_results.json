@@ -1,0 +1,29 @@
+{
+  "version": "3.12.0",
+  "summary_line": "2 examples, 1 failure",
+  "summary": {"example_count": 2, "failure_count": 1, "duration": 0.45},
+  "examples": [
+    {
+      "id": "./spec/api/users_spec.rb[1:1]",
+      "description": "creates a user successfully",
+      "full_description": "UsersAPI POST /users creates a user successfully",
+      "status": "failed",
+      "file_path": "./spec/api/users_spec.rb",
+      "line_number": 12,
+      "run_time": 0.23,
+      "exception": {
+        "class": "RSpec::Expectations::ExpectationNotMetError",
+        "message": "expected the response to have status code 201 but it was 404"
+      }
+    },
+    {
+      "id": "./spec/api/users_spec.rb[1:2]",
+      "description": "returns 200 for existing user",
+      "full_description": "UsersAPI GET /users/:id returns 200 for existing user",
+      "status": "passed",
+      "file_path": "./spec/api/users_spec.rb",
+      "line_number": 25,
+      "run_time": 0.22
+    }
+  ]
+}

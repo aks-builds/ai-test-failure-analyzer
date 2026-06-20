@@ -8,19 +8,26 @@ from pathlib import Path
 from .base import NormalizedFailure, Parser
 from .cypress_json import CypressJsonParser
 from .detox_json import DetoxJsonParser
+from .go_test_json import GoTestJsonParser
 from .jest_json import JestJsonParser
 from .junit_generic import JUnitXmlParser
 from .k6_json import K6JsonParser
 from .mocha_json import MochaJsonParser
 from .newman_json import NewmanJsonParser
+from .nunit_xml import NUnitXmlParser
+from .phpunit_xml import PHPUnitXmlParser
 from .playwright_json import PlaywrightJsonParser
 from .pytest_junit import PytestJUnitParser
+from .rspec_json import RSpecJsonParser
+from .robot_xml import RobotXmlParser
 from .vitest_json import VitestJsonParser
 from .wdio_json import WdioJsonParser
+from .xunit_xml import XUnitXmlParser
 
 # Order matters: most specific first.
 # Newman and k6 before generic JSON parsers; JUnit XML fallback is last.
 # Vitest must precede Jest — "vitestVersion" key distinguishes them.
+# Go NDJSON before generic JSON; PHPUnit/NUnit/xUnit/Robot before JUnit fallback.
 PARSERS: list[type[Parser]] = [
     PlaywrightJsonParser,
     NewmanJsonParser,
@@ -31,6 +38,12 @@ PARSERS: list[type[Parser]] = [
     MochaJsonParser,
     JestJsonParser,
     CypressJsonParser,
+    RSpecJsonParser,
+    GoTestJsonParser,
+    PHPUnitXmlParser,
+    NUnitXmlParser,
+    XUnitXmlParser,
+    RobotXmlParser,
     PytestJUnitParser,
     JUnitXmlParser,
 ]
@@ -46,6 +59,14 @@ FRAMEWORKS: dict[str, type[Parser]] = {
     "mocha": MochaJsonParser,
     "jest": JestJsonParser,
     "cypress": CypressJsonParser,
+    "rspec": RSpecJsonParser,
+    "go": GoTestJsonParser,
+    "gotest": GoTestJsonParser,
+    "phpunit": PHPUnitXmlParser,
+    "nunit": NUnitXmlParser,
+    "xunit": XUnitXmlParser,
+    "robot": RobotXmlParser,
+    "robotframework": RobotXmlParser,
     "pytest": PytestJUnitParser,
     "junit": JUnitXmlParser,
     "rest-assured": JUnitXmlParser,
@@ -114,6 +135,12 @@ ParserRegistry.register(DetoxJsonParser,    aliases=["detox"])
 ParserRegistry.register(MochaJsonParser,    aliases=["mocha"])
 ParserRegistry.register(JestJsonParser,     aliases=["jest"])
 ParserRegistry.register(CypressJsonParser,  aliases=["cypress"])
+ParserRegistry.register(RSpecJsonParser,    aliases=["rspec"])
+ParserRegistry.register(GoTestJsonParser,   aliases=["go", "gotest"])
+ParserRegistry.register(PHPUnitXmlParser,   aliases=["phpunit"])
+ParserRegistry.register(NUnitXmlParser,     aliases=["nunit"])
+ParserRegistry.register(XUnitXmlParser,     aliases=["xunit"])
+ParserRegistry.register(RobotXmlParser,     aliases=["robot", "robotframework"])
 ParserRegistry.register(PytestJUnitParser,  aliases=["pytest"])
 ParserRegistry.register(JUnitXmlParser,     aliases=["junit", "rest-assured", "karate", "insomnia"])
 
