@@ -1,0 +1,12 @@
+{
+  "aggregate": {
+    "scenariosCreated": 100,
+    "scenariosCompleted": 85,
+    "requestsCompleted": 85,
+    "codes": {"200": 70, "404": 15},
+    "errors": {"ECONNREFUSED": 5},
+    "customStats": {}
+  },
+  "intermediate": [],
+  "scenariosCreated": 100
+}

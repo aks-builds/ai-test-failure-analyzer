@@ -1,0 +1,20 @@
+{
+  "consumer": {"name": "frontend-app"},
+  "provider": {"name": "user-api"},
+  "interactions": [
+    {
+      "description": "a request to create a user",
+      "providerState": "no users exist",
+      "request": {"method": "POST", "path": "/api/users"},
+      "response": {"status": 201},
+      "verified": false,
+      "verificationError": "Expected status 201 but got 404"
+    },
+    {
+      "description": "a request to get existing user",
+      "request": {"method": "GET", "path": "/api/users/1"},
+      "response": {"status": 200},
+      "verified": true
+    }
+  ]
+}

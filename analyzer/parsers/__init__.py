@@ -6,8 +6,10 @@ import os
 from pathlib import Path
 
 from .base import NormalizedFailure, Parser
+from .artillery_json import ArtilleryJsonParser
 from .cypress_json import CypressJsonParser
 from .detox_json import DetoxJsonParser
+from .gatling_log import GatlingLogParser
 from .go_test_json import GoTestJsonParser
 from .jest_json import JestJsonParser
 from .junit_generic import JUnitXmlParser
@@ -15,6 +17,7 @@ from .k6_json import K6JsonParser
 from .mocha_json import MochaJsonParser
 from .newman_json import NewmanJsonParser
 from .nunit_xml import NUnitXmlParser
+from .pact_json import PactJsonParser
 from .phpunit_xml import PHPUnitXmlParser
 from .playwright_json import PlaywrightJsonParser
 from .pytest_junit import PytestJUnitParser
@@ -28,10 +31,14 @@ from .xunit_xml import XUnitXmlParser
 # Newman and k6 before generic JSON parsers; JUnit XML fallback is last.
 # Vitest must precede Jest — "vitestVersion" key distinguishes them.
 # Go NDJSON before generic JSON; PHPUnit/NUnit/xUnit/Robot before JUnit fallback.
+# Gatling TSV before JSON parsers; Artillery/Pact before generic JSON.
 PARSERS: list[type[Parser]] = [
     PlaywrightJsonParser,
     NewmanJsonParser,
     K6JsonParser,
+    ArtilleryJsonParser,
+    GatlingLogParser,
+    PactJsonParser,
     VitestJsonParser,
     WdioJsonParser,
     DetoxJsonParser,
@@ -52,6 +59,9 @@ FRAMEWORKS: dict[str, type[Parser]] = {
     "playwright": PlaywrightJsonParser,
     "newman": NewmanJsonParser,
     "k6": K6JsonParser,
+    "artillery": ArtilleryJsonParser,
+    "gatling": GatlingLogParser,
+    "pact": PactJsonParser,
     "vitest": VitestJsonParser,
     "wdio": WdioJsonParser,
     "webdriverio": WdioJsonParser,
@@ -129,6 +139,9 @@ from .registry import ParserRegistry
 ParserRegistry.register(PlaywrightJsonParser)
 ParserRegistry.register(NewmanJsonParser,   aliases=["newman"])
 ParserRegistry.register(K6JsonParser,       aliases=["k6"])
+ParserRegistry.register(ArtilleryJsonParser, aliases=["artillery"])
+ParserRegistry.register(GatlingLogParser,    aliases=["gatling"])
+ParserRegistry.register(PactJsonParser,      aliases=["pact"])
 ParserRegistry.register(VitestJsonParser,   aliases=["vitest"])
 ParserRegistry.register(WdioJsonParser,     aliases=["wdio", "webdriverio"])
 ParserRegistry.register(DetoxJsonParser,    aliases=["detox"])

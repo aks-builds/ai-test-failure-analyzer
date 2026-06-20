@@ -388,3 +388,56 @@ def test_robot_parse_returns_failures(fixtures):
     assert len(failed) == 1
     assert "Create User" in failed[0].title
     assert failed[0].framework == "robot"
+
+
+# ── Artillery ─────────────────────────────────────────────────────────────────
+
+def test_artillery_can_parse(fixtures):
+    from analyzer.parsers.artillery_json import ArtilleryJsonParser
+    assert ArtilleryJsonParser.can_parse((fixtures / "artillery_results.json").read_bytes())
+
+
+def test_artillery_parse_returns_failures(fixtures):
+    from analyzer.parsers.artillery_json import ArtilleryJsonParser
+    results = ArtilleryJsonParser.parse(fixtures / "artillery_results.json")
+    # Artillery reports aggregate errors as failures
+    failed = [r for r in results if r.status == "failed"]
+    assert len(failed) >= 1
+    assert failed[0].framework == "artillery"
+
+
+# ── Gatling ───────────────────────────────────────────────────────────────────
+
+def test_gatling_can_parse(fixtures):
+    from analyzer.parsers.gatling_log import GatlingLogParser
+    assert GatlingLogParser.can_parse((fixtures / "gatling_simulation.log").read_bytes())
+
+
+def test_gatling_cannot_parse_json(fixtures):
+    from analyzer.parsers.gatling_log import GatlingLogParser
+    assert not GatlingLogParser.can_parse(b'{"testResults": []}')
+
+
+def test_gatling_parse_returns_failures(fixtures):
+    from analyzer.parsers.gatling_log import GatlingLogParser
+    results = GatlingLogParser.parse(fixtures / "gatling_simulation.log")
+    failed = [r for r in results if r.status == "failed"]
+    assert len(failed) == 1
+    assert "/api/users/register" in failed[0].title
+    assert failed[0].framework == "gatling"
+
+
+# ── Pact ──────────────────────────────────────────────────────────────────────
+
+def test_pact_can_parse(fixtures):
+    from analyzer.parsers.pact_json import PactJsonParser
+    assert PactJsonParser.can_parse((fixtures / "pact_results.json").read_bytes())
+
+
+def test_pact_parse_returns_failures(fixtures):
+    from analyzer.parsers.pact_json import PactJsonParser
+    results = PactJsonParser.parse(fixtures / "pact_results.json")
+    failed = [r for r in results if r.status == "failed"]
+    assert len(failed) == 1
+    assert "create a user" in failed[0].title
+    assert failed[0].framework == "pact"
