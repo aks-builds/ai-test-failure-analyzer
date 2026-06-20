@@ -44,6 +44,10 @@ class NormalizedFailure:
     http: dict | None = None
     attachments: list[str] = field(default_factory=list)
     raw: dict = field(default_factory=dict)
+    # v2 intelligence fields — backward compatible, all default to None / empty
+    flakiness_score: float | None = None
+    flakiness_category: str | None = None
+    ctrf_extra: dict = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)

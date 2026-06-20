@@ -161,3 +161,27 @@ def test_parse_k6_passed_checks_excluded():
     failures = K6JsonParser.parse(FIXTURES / "k6_results.json")
     # "response time < 500ms" has 0 fails — should not appear as a failed result
     assert not any(f.title == "response time < 500ms" and f.status == "failed" for f in failures)
+
+
+def test_normalized_failure_new_fields_default_none():
+    """New v2 fields must default to None / empty dict for backward compat."""
+    from analyzer.parsers.base import NormalizedFailure
+    f = NormalizedFailure(
+        id="abc", framework="pytest", suite="s", title="t", file="f.py"
+    )
+    assert f.flakiness_score is None
+    assert f.flakiness_category is None
+    assert f.ctrf_extra == {}
+
+
+def test_normalized_failure_new_fields_set():
+    from analyzer.parsers.base import NormalizedFailure
+    f = NormalizedFailure(
+        id="abc", framework="pytest", suite="s", title="t", file="f.py",
+        flakiness_score=0.75,
+        flakiness_category="ID",
+        ctrf_extra={"foo": "bar"},
+    )
+    assert f.flakiness_score == 0.75
+    assert f.flakiness_category == "ID"
+    assert f.ctrf_extra == {"foo": "bar"}
