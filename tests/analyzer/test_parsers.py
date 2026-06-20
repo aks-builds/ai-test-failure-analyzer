@@ -214,3 +214,78 @@ def test_parser_registry_unknown_returns_none(tmp_path):
     p.write_text('{"foo": "bar"}')
     result = ParserRegistry.detect(p)
     assert result is None
+
+
+# ── fixtures helper ───────────────────────────────────────────────────────────
+
+
+@pytest.fixture
+def fixtures():
+    return Path(__file__).parent / "fixtures"
+
+
+# ── Vitest ──────────────────────────────────────────────────────────────────
+
+def test_vitest_can_parse(fixtures):
+    from analyzer.parsers.vitest_json import VitestJsonParser
+    assert VitestJsonParser.can_parse((fixtures / "vitest_results.json").read_bytes())
+
+
+def test_vitest_cannot_parse_playwright(fixtures):
+    from analyzer.parsers.vitest_json import VitestJsonParser
+    assert not VitestJsonParser.can_parse((fixtures / "playwright_results.json").read_bytes())
+
+
+def test_vitest_parse_returns_failures(fixtures):
+    from analyzer.parsers.vitest_json import VitestJsonParser
+    results = VitestJsonParser.parse(fixtures / "vitest_results.json")
+    failed = [r for r in results if r.status == "failed"]
+    assert len(failed) == 1
+    assert "formats ISO string correctly" in failed[0].title
+    assert failed[0].framework == "vitest"
+
+
+# ── WDIO ─────────────────────────────────────────────────────────────────────
+
+def test_wdio_can_parse(fixtures):
+    from analyzer.parsers.wdio_json import WdioJsonParser
+    assert WdioJsonParser.can_parse((fixtures / "wdio_results.json").read_bytes())
+
+
+def test_wdio_parse_returns_failures(fixtures):
+    from analyzer.parsers.wdio_json import WdioJsonParser
+    results = WdioJsonParser.parse(fixtures / "wdio_results.json")
+    failed = [r for r in results if r.status == "failed"]
+    assert len(failed) == 1
+    assert failed[0].framework == "wdio"
+
+
+# ── Detox ────────────────────────────────────────────────────────────────────
+
+def test_detox_can_parse(fixtures):
+    from analyzer.parsers.detox_json import DetoxJsonParser
+    assert DetoxJsonParser.can_parse((fixtures / "detox_results.json").read_bytes())
+
+
+def test_detox_parse_returns_failures(fixtures):
+    from analyzer.parsers.detox_json import DetoxJsonParser
+    results = DetoxJsonParser.parse(fixtures / "detox_results.json")
+    failed = [r for r in results if r.status == "failed"]
+    assert len(failed) == 1
+    assert failed[0].framework == "detox"
+
+
+# ── Mocha ────────────────────────────────────────────────────────────────────
+
+def test_mocha_can_parse(fixtures):
+    from analyzer.parsers.mocha_json import MochaJsonParser
+    assert MochaJsonParser.can_parse((fixtures / "mocha_results.json").read_bytes())
+
+
+def test_mocha_parse_returns_failures(fixtures):
+    from analyzer.parsers.mocha_json import MochaJsonParser
+    results = MochaJsonParser.parse(fixtures / "mocha_results.json")
+    failed = [r for r in results if r.status == "failed"]
+    assert len(failed) == 1
+    assert "POST /users" in failed[0].title
+    assert failed[0].framework == "mocha"

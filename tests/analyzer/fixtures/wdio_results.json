@@ -1,0 +1,18 @@
+{
+  "runner": "local",
+  "capabilities": {"browserName": "chrome"},
+  "suites": [
+    {
+      "name": "Login Suite",
+      "tests": [
+        {
+          "name": "should login with valid credentials",
+          "file": "test/specs/login.spec.js",
+          "state": "failed",
+          "duration": 3200,
+          "error": {"message": "Element not found: #login-button", "stack": "Error: Element not found"}
+        }
+      ]
+    }
+  ]
+}

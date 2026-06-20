@@ -7,19 +7,28 @@ from pathlib import Path
 
 from .base import NormalizedFailure, Parser
 from .cypress_json import CypressJsonParser
+from .detox_json import DetoxJsonParser
 from .jest_json import JestJsonParser
 from .junit_generic import JUnitXmlParser
 from .k6_json import K6JsonParser
+from .mocha_json import MochaJsonParser
 from .newman_json import NewmanJsonParser
 from .playwright_json import PlaywrightJsonParser
 from .pytest_junit import PytestJUnitParser
+from .vitest_json import VitestJsonParser
+from .wdio_json import WdioJsonParser
 
 # Order matters: most specific first.
 # Newman and k6 before generic JSON parsers; JUnit XML fallback is last.
+# Vitest must precede Jest — "vitestVersion" key distinguishes them.
 PARSERS: list[type[Parser]] = [
     PlaywrightJsonParser,
     NewmanJsonParser,
     K6JsonParser,
+    VitestJsonParser,
+    WdioJsonParser,
+    DetoxJsonParser,
+    MochaJsonParser,
     JestJsonParser,
     CypressJsonParser,
     PytestJUnitParser,
@@ -30,11 +39,13 @@ FRAMEWORKS: dict[str, type[Parser]] = {
     "playwright": PlaywrightJsonParser,
     "newman": NewmanJsonParser,
     "k6": K6JsonParser,
+    "vitest": VitestJsonParser,
+    "wdio": WdioJsonParser,
+    "webdriverio": WdioJsonParser,
+    "detox": DetoxJsonParser,
+    "mocha": MochaJsonParser,
     "jest": JestJsonParser,
-    "vitest": JestJsonParser,
     "cypress": CypressJsonParser,
-    "webdriverio": CypressJsonParser,
-    "wdio": CypressJsonParser,
     "pytest": PytestJUnitParser,
     "junit": JUnitXmlParser,
     "rest-assured": JUnitXmlParser,
@@ -93,13 +104,18 @@ def parse(path: Path, framework: str = "auto") -> tuple[str, list[NormalizedFail
 from .registry import ParserRegistry
 
 # Register all existing parsers in detection-priority order (most specific first).
+# Vitest must precede Jest — "vitestVersion" key distinguishes them.
 ParserRegistry.register(PlaywrightJsonParser)
-ParserRegistry.register(NewmanJsonParser,  aliases=["newman"])
-ParserRegistry.register(K6JsonParser,      aliases=["k6"])
-ParserRegistry.register(JestJsonParser,    aliases=["jest", "vitest"])
-ParserRegistry.register(CypressJsonParser, aliases=["cypress", "webdriverio", "wdio"])
-ParserRegistry.register(PytestJUnitParser, aliases=["pytest"])
-ParserRegistry.register(JUnitXmlParser,    aliases=["junit", "rest-assured", "karate", "insomnia"])
+ParserRegistry.register(NewmanJsonParser,   aliases=["newman"])
+ParserRegistry.register(K6JsonParser,       aliases=["k6"])
+ParserRegistry.register(VitestJsonParser,   aliases=["vitest"])
+ParserRegistry.register(WdioJsonParser,     aliases=["wdio", "webdriverio"])
+ParserRegistry.register(DetoxJsonParser,    aliases=["detox"])
+ParserRegistry.register(MochaJsonParser,    aliases=["mocha"])
+ParserRegistry.register(JestJsonParser,     aliases=["jest"])
+ParserRegistry.register(CypressJsonParser,  aliases=["cypress"])
+ParserRegistry.register(PytestJUnitParser,  aliases=["pytest"])
+ParserRegistry.register(JUnitXmlParser,     aliases=["junit", "rest-assured", "karate", "insomnia"])
 
 __all__ = [
     "NormalizedFailure", "Parser",

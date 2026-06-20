@@ -1,0 +1,18 @@
+{
+  "stats": {"suites": 1, "tests": 2, "passes": 1, "failures": 1, "duration": 450},
+  "passes": [
+    {"fullTitle": "API health check returns 200", "duration": 120, "currentRetry": 0}
+  ],
+  "failures": [
+    {
+      "fullTitle": "API POST /users returns 201",
+      "file": "test/api.spec.js",
+      "duration": 330,
+      "err": {
+        "message": "AssertionError: expected 404 to equal 201",
+        "stack": "AssertionError: expected 404 to equal 201\n    at test/api.spec.js:22:5"
+      }
+    }
+  ],
+  "pending": []
+}

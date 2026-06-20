@@ -1,0 +1,18 @@
+{
+  "vitestVersion": "1.6.0",
+  "testResults": [
+    {
+      "testFilePath": "src/utils.test.ts",
+      "assertionResults": [
+        {
+          "ancestorTitles": ["formatDate"],
+          "fullName": "formatDate formats ISO string correctly",
+          "status": "failed",
+          "title": "formats ISO string correctly",
+          "duration": 12,
+          "failureMessages": ["Expected: \"2024-01-15\"\nReceived: \"01/15/2024\""]
+        }
+      ]
+    }
+  ]
+}

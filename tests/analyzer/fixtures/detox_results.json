@@ -1,0 +1,18 @@
+{
+  "artifactsLocation": "artifacts/",
+  "device": {"type": "simulator", "name": "iPhone 15"},
+  "testResults": [
+    {
+      "testFilePath": "e2e/login.test.js",
+      "assertionResults": [
+        {
+          "ancestorTitles": ["Login"],
+          "title": "should navigate to home screen",
+          "status": "failed",
+          "duration": 5100,
+          "failureMessages": ["Timeout waiting for element with id 'homeScreen'"]
+        }
+      ]
+    }
+  ]
+}
