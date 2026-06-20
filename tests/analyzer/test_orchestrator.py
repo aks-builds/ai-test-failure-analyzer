@@ -30,6 +30,14 @@ def test_analyze_against_demo_data():
     assert "Hypothes" in result.report_markdown
 
 
+def test_orchestrator_phase_timings_present(tmp_path):
+    """AnalysisResult must have phase_timings dict after v2 orchestrator."""
+    from analyzer.orchestrator import AnalysisResult
+    import dataclasses
+    fields = {f.name for f in dataclasses.fields(AnalysisResult)}
+    assert "phase_timings" in fields
+
+
 def test_analyze_creates_dry_run_issue(monkeypatch):
     """Dry-run issue creation never touches the network."""
     from analyzer.github_integration import create_issue_from_hypothesis

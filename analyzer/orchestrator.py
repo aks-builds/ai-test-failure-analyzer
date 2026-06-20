@@ -15,11 +15,11 @@ from __future__ import annotations
 
 import os
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, AsyncIterator, Callable, Optional
 
-from .evidence import cluster_failures, correlate, scan_config, scan_git_history, scan_logs
+from .evidence import cluster_failures, correlate
 from .hypothesis import Hypothesis, form_hypotheses
 from .parsers import detect, parse
 from .render.markdown import render_markdown_report
@@ -43,6 +43,7 @@ class AnalysisResult:
     profile: WorkspaceProfile | None = None
     suppressed_hypotheses: int = 0
     no_app_fault: bool = False
+    phase_timings: dict = field(default_factory=dict)
 
 
 # An "ask" callback is what each UI provides for clarifying questions.
@@ -82,6 +83,7 @@ def analyze(
     workspace = Path(workspace or Path.cwd()).resolve()
     ask = ask or _no_op_ask
     start = time.monotonic()
+    phase_timings: dict = {}
 
     def emit(event: dict) -> None:
         if progress:
@@ -139,25 +141,34 @@ def analyze(
     # ── Phase 2: Test intent — already in NormalizedFailure (file, line, comments-in-error). No separate call. ─
     emit({"phase": 2, "name": "Read test intent", "status": "completed", "data": {"failures_with_intent": sum(1 for f in failures if f.error_message)}})
 
-    # ── Phase 3: Git history ───────────────────────────────────────────────
-    emit({"phase": 3, "name": "Scan git history", "status": "started"})
-    git = scan_git_history(workspace)
-    if not git["available"]:
-        # Confirm whether to continue
+    # ── Phase 5.5: Collect evidence (parallel) ─────────────────────────────
+    from .evidence import _REGISTRY
+    import time as _time
+    emit({"phase": "5.5", "name": "Collect evidence", "status": "started"})
+    _t55 = _time.monotonic()
+    bundles = _REGISTRY.collect_all(workspace, profile, timeout=30, emit=emit)
+    phase_timings["5.5_collect_evidence"] = _time.monotonic() - _t55
+
+    # Extract legacy dicts for backward compat with correlator (unchanged in Phase 1)
+    def _legacy(name, fallback):
+        b = bundles.get(name)
+        return b.legacy if (b and b.legacy) else fallback
+
+    git    = _legacy("git",    {"available": False, "commits": [], "summary": {}})
+    logs   = _legacy("logs",   {"available": False, "matches": [], "summary": {}})
+    config = _legacy("config", {"available": False, "files":   [], "summary": {}})
+
+    # Wire the no_git_history question to the git bundle result (backward compat)
+    if not git.get("available"):
         choice = ask("no_git_history")
         if choice == "no":
             raise RuntimeError("Analysis cancelled — git history requested.")
-    emit({"phase": 3, "name": "Scan git history", "status": "completed", "data": git["summary"]})
 
-    # ── Phase 4: Logs ──────────────────────────────────────────────────────
-    emit({"phase": 4, "name": "Scan application logs", "status": "started"})
-    logs = scan_logs(workspace)
-    emit({"phase": 4, "name": "Scan application logs", "status": "completed", "data": logs["summary"]})
-
-    # ── Phase 5: Config ────────────────────────────────────────────────────
-    emit({"phase": 5, "name": "Scan configuration", "status": "started"})
-    config = scan_config(workspace)
-    emit({"phase": 5, "name": "Scan configuration", "status": "completed", "data": config["summary"]})
+    active = [name for name, b in bundles.items() if b.available]
+    emit({
+        "phase": "5.5", "name": "Collect evidence", "status": "completed",
+        "data": {"active_collectors": active, "elapsed_ms": int(phase_timings["5.5_collect_evidence"] * 1000)},
+    })
 
     # ── Phase 6: Correlate ─────────────────────────────────────────────────
     emit({"phase": 6, "name": "Cross-correlate evidence", "status": "started"})
@@ -208,4 +219,5 @@ def analyze(
         profile=profile,
         suppressed_hypotheses=suppressed_count,
         no_app_fault=no_app_fault,
+        phase_timings=phase_timings,
     )
