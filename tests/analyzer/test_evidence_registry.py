@@ -83,3 +83,24 @@ def test_registry_handles_collector_exception(tmp_path):
 def test_collector_abstract_cannot_be_instantiated():
     with pytest.raises(TypeError):
         EvidenceCollector()
+
+
+def test_git_collector_wraps_legacy_output(tmp_path):
+    """GitCollector must return an EvidenceBundle whose .legacy matches
+    the exact shape scan_git_history() returns."""
+    from analyzer.evidence.collectors.git_collector import GitCollector
+    # tmp_path has no .git — collector should be unavailable
+    assert GitCollector.is_available(tmp_path, profile=None) is False
+    bundle = GitCollector.collect(tmp_path, profile=None)
+    assert bundle.available is False
+    assert "available" in bundle.legacy
+
+
+def test_git_collector_available_in_real_repo():
+    """Collector is available when .git/ exists (this test runs inside the repo)."""
+    from pathlib import Path
+    from analyzer.evidence.collectors.git_collector import GitCollector
+    repo_root = Path(__file__).parent.parent.parent  # ai-test-failure-analyzer/
+    if not (repo_root / ".git").exists():
+        pytest.skip("not inside a git repo")
+    assert GitCollector.is_available(repo_root, profile=None) is True
