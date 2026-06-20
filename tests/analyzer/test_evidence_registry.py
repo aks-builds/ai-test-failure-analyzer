@@ -104,3 +104,30 @@ def test_git_collector_available_in_real_repo():
     if not (repo_root / ".git").exists():
         pytest.skip("not inside a git repo")
     assert GitCollector.is_available(repo_root, profile=None) is True
+
+
+def test_log_collector_unavailable_in_empty_dir(tmp_path):
+    from analyzer.evidence.collectors.log_collector import LogCollector
+    assert LogCollector.is_available(tmp_path, profile=None) is False
+    bundle = LogCollector.collect(tmp_path, profile=None)
+    assert bundle.available is False
+    assert "available" in bundle.legacy
+
+
+def test_log_collector_available_when_log_file_exists(tmp_path):
+    from analyzer.evidence.collectors.log_collector import LogCollector
+    (tmp_path / "app.log").write_text("ERROR something failed\n")
+    assert LogCollector.is_available(tmp_path, profile=None) is True
+
+
+def test_config_collector_unavailable_in_empty_dir(tmp_path):
+    from analyzer.evidence.collectors.config_collector import ConfigCollector
+    assert ConfigCollector.is_available(tmp_path, profile=None) is False
+    bundle = ConfigCollector.collect(tmp_path, profile=None)
+    assert bundle.available is False
+
+
+def test_config_collector_available_when_env_exists(tmp_path):
+    from analyzer.evidence.collectors.config_collector import ConfigCollector
+    (tmp_path / ".env").write_text("DATABASE_URL=postgres://...\n")
+    assert ConfigCollector.is_available(tmp_path, profile=None) is True
