@@ -9,6 +9,12 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
+
+if sys.platform == "win32" and hasattr(sys.stdout, "reconfigure"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
 from typing import Optional
 
 import questionary
@@ -91,7 +97,12 @@ def run(
         )
     except FileNotFoundError as e:
         console.print(f"\n[red]✗[/red] {e}")
-        console.print("[dim]Run `npx playwright test` first (or check the path).[/dim]")
+        console.print("[dim]Run your test suite first to generate a results file, then re-run.[/dim]")
+        return 2
+    except ValueError as e:
+        console.print(f"\n[red]✗ Validation error[/red]")
+        for line in str(e).splitlines():
+            console.print(f"  {line}")
         return 2
     except Exception as e:
         console.print(f"\n[red]✗[/red] Analysis failed: {e}")
@@ -130,6 +141,15 @@ def run(
             out_path = ws / out if not Path(out).is_absolute() else Path(out)
             out_path.write_text(output, encoding="utf-8")
             console.print(f"[green]✓[/green] CTRF report written to [bold]{out_path}[/bold]")
+        else:
+            print(output)
+    elif format == "json":
+        import json as _json
+        output = _json.dumps(result.to_dict(), indent=2, ensure_ascii=False)
+        if out:
+            out_path = ws / out if not Path(out).is_absolute() else Path(out)
+            out_path.write_text(output, encoding="utf-8")
+            console.print(f"[green]✓[/green] JSON report written to [bold]{out_path}[/bold]")
         else:
             print(output)
     elif out:

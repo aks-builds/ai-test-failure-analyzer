@@ -130,6 +130,32 @@ def analyze(
         raise FileNotFoundError("Test results file not found.")
     safe_results_path = Path(_joined)
 
+    # ── Results file validation ───────────────────────────────────────────────
+    _raw = safe_results_path.read_bytes()
+    if not _raw.strip():
+        raise ValueError(
+            f"Results file is empty: {safe_results_path}\n"
+            "Run your test suite first to generate a results file."
+        )
+    _suffix = safe_results_path.suffix.lower()
+    if _suffix == ".json":
+        import json as _json
+        try:
+            _json.loads(_raw)
+        except _json.JSONDecodeError as exc:
+            raise ValueError(
+                f"Results file contains invalid JSON: {safe_results_path}\n"
+                f"  {exc}\n"
+                "Check that your test runner finished successfully and the file is complete."
+            ) from exc
+    elif _suffix in (".xml", ".trx"):
+        _text_start = _raw[:200].lstrip()
+        if not (_text_start.startswith(b"<") or _text_start.startswith(b"\xef\xbb\xbf<")):
+            raise ValueError(
+                f"Results file does not look like valid XML: {safe_results_path}\n"
+                "Expected the file to begin with '<'. Check your test runner output."
+            )
+
     # ── Cache check (before Phase 0 so workspace scan is skipped on hit) ─────
     from .cache import CacheKey, load_cached, save_cache
     cache_key = CacheKey.compute(workspace, safe_results_path)
