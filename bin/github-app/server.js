@@ -59,7 +59,8 @@ async function handleCheckRun(payload, token) {
   if (!runId) return;
 
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "atfa-"));
-  const artifactPath = path.join(tmpDir, "results.json");
+  const zipPath = path.join(tmpDir, "artifact.zip");
+  let extractDir = null;
 
   try {
     // Download artifacts list
@@ -79,7 +80,27 @@ async function handleCheckRun(payload, token) {
     );
     if (!artifact) return;
 
-    await downloadArtifact(artifact.archive_download_url, token, artifactPath);
+    // GitHub returns a zip archive — download to zipPath then extract
+    await downloadArtifact(artifact.archive_download_url, token, zipPath);
+
+    extractDir = fs.mkdtempSync(path.join(os.tmpdir(), "atfa-extract-"));
+    try {
+      execFileSync("unzip", ["-q", zipPath, "-d", extractDir]);
+    } catch (e) {
+      console.error("Artifact extraction failed:", e.message);
+      return;
+    }
+
+    // Find the first supported result file in the extracted directory
+    const extractedFiles = fs.readdirSync(extractDir);
+    const resultFile = extractedFiles.find(f =>
+      f.endsWith(".json") || f.endsWith(".xml") || f.endsWith(".trx")
+    );
+    if (!resultFile) {
+      console.error("No supported result file found in artifact zip");
+      return;
+    }
+    const artifactPath = path.join(extractDir, resultFile);
 
     // Run analysis
     const analysisJson = execFileSync("ai-analyze", ["analyze", artifactPath, "--format", "json"], {
@@ -127,6 +148,9 @@ async function handleCheckRun(payload, token) {
     });
   } finally {
     try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch {}
+    if (extractDir) {
+      try { fs.rmSync(extractDir, { recursive: true, force: true }); } catch {}
+    }
   }
 }
 
@@ -139,15 +163,18 @@ const server = http.createServer(async (req, res) => {
 
   const MAX_BODY = 1_048_576; // 1 MB
   let body = "";
+  let requestAborted = false;
   req.on("data", chunk => {
     body += chunk;
     if (body.length > MAX_BODY) {
+      requestAborted = true;
       res.writeHead(413, { "Content-Type": "text/plain" });
       res.end("Payload Too Large");
       req.destroy();
     }
   });
   req.on("end", async () => {
+    if (requestAborted) return;
     const sig = req.headers["x-hub-signature-256"] || "";
     if (!verifySignature(body, sig)) {
       res.writeHead(401);

@@ -59,10 +59,11 @@ def score_cluster(
 
     # Hard caps
     if tier1_count == 0 and not source_types:
-        # Single test output only
-        raw = min(raw, 55)
-    if tier1_count == 0 and source_types:
+        # Single test output only — no evidence at all
         raw = min(raw, 40)
+    if tier1_count == 0 and source_types:
+        # Some Tier-2 evidence present but no Tier-1
+        raw = min(raw, 55)
 
     score = max(10, min(98, raw))
 

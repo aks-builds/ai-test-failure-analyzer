@@ -57,6 +57,7 @@ def load_cached(workspace: Path, key: str):
         # Reconstruct AnalysisResult from dict (minimal fields only)
         from .orchestrator import AnalysisResult
         from .workspace_scanner import WorkspaceProfile
+        from .parsers.base import NormalizedFailure
         profile_data = data.get("profile") or {}
         profile = WorkspaceProfile(
             mode=profile_data.get("mode", "API_ONLY"),
@@ -66,9 +67,15 @@ def load_cached(workspace: Path, key: str):
             openapi_spec=None,
             has_git=profile_data.get("has_git", False),
         )
+        _valid_fields = set(NormalizedFailure.__dataclass_fields__)
+        failures_data = data.get("failures", [])
+        failures = [
+            NormalizedFailure(**{k: v for k, v in fd.items() if k in _valid_fields})
+            for fd in failures_data
+        ]
         return AnalysisResult(
             framework=data["framework"],
-            failures=[],  # failures not cached (large); re-parse on hit is fast
+            failures=failures,
             git=data.get("git", {}),
             logs=data.get("logs", {}),
             config=data.get("config", {}),
@@ -104,6 +111,28 @@ def save_cache(workspace: Path, key: str, result) -> None:
             "no_app_fault": result.no_app_fault,
             "phase_timings": getattr(result, "phase_timings", {}),
             "profile": dataclasses.asdict(result.profile) if result.profile else {},
+            "failures": [
+                {
+                    "id": f.id,
+                    "framework": f.framework,
+                    "suite": f.suite,
+                    "title": f.title,
+                    "file": f.file,
+                    "line": f.line,
+                    "duration_ms": f.duration_ms,
+                    "status": f.status,
+                    "error_message": f.error_message,
+                    "error_stack": f.error_stack,
+                    "expected": f.expected,
+                    "actual": f.actual,
+                    "http": f.http,
+                    "attachments": f.attachments,
+                    "flakiness_score": f.flakiness_score,
+                    "flakiness_category": f.flakiness_category,
+                    "ctrf_extra": f.ctrf_extra,
+                }
+                for f in result.failures
+            ],
         }
         p.write_text(json.dumps(data, indent=2, default=str), encoding="utf-8")
     except Exception:

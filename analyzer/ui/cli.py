@@ -23,7 +23,7 @@ from ..github_integration import create_issue_from_hypothesis, detect_default_re
 from ..orchestrator import analyze
 from ..render.ansi import render_ansi_report
 
-PHASE_ICONS = {1: "📥", 2: "📖", 3: "🔀", 4: "📋", 5: "⚙️", 6: "🔗", 7: "🧠", 8: "📝"}
+PHASE_ICONS = {1: "📥", 2: "📖", "2.5": "🔍", 3: "🔀", 4: "📋", 5: "⚙️", "5.5": "🔬", 6: "🔗", 7: "🧠", 8: "📝"}
 
 
 def _ask_cli(qid: str) -> str:
@@ -64,7 +64,7 @@ def run(
 
     def progress(event: dict) -> None:
         phase = event.get("phase")
-        if not isinstance(phase, int):
+        if not isinstance(phase, (int, str)):
             return
         name = event.get("name", "")
         status = event.get("status", "")

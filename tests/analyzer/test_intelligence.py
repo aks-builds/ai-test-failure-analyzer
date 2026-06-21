@@ -277,7 +277,7 @@ def test_clusterer_empty_input():
 # ── Scorer ────────────────────────────────────────────────────────────────────
 
 def test_scorer_no_evidence_returns_10():
-    """Empty graph: raw=0, no caps bite below 55, score clamps to floor of 10."""
+    """Empty graph: raw=0, no caps bite below 40, score clamps to floor of 10."""
     from analyzer.intelligence.scorer import score_cluster
     from analyzer.evidence.graph import EvidenceGraph
     from analyzer.parsers.base import NormalizedFailure, make_failure_id
@@ -286,7 +286,7 @@ def test_scorer_no_evidence_returns_10():
                           status="failed")
     score, justification = score_cluster("C1", [fid], EvidenceGraph(), [f])
     # raw_weight=0, corroboration=0, flaky=0, contradiction=0 → raw=0
-    # tier1_count==0, no source_types → cap at 55 → min(0,55)=0 → max(10,0)=10
+    # tier1_count==0, no source_types → cap at 40 → min(0,40)=0 → max(10,0)=10
     assert score == 10
     assert isinstance(justification, str)
 
@@ -331,8 +331,8 @@ def test_scorer_flaky_penalty_reduces_score_to_60():
     assert score == 60
 
 
-def test_scorer_no_tier1_capped_at_40():
-    """Four Tier-2 nodes across 3 source types: raw=75 gets capped to 40 by no-tier1 rule."""
+def test_scorer_no_tier1_capped_at_55():
+    """Four Tier-2 nodes across 3 source types: raw=75 gets capped to 55 by no-tier1 rule."""
     from analyzer.intelligence.scorer import score_cluster
     from analyzer.evidence.graph import EvidenceGraph, EvidenceNode, EvidenceEdge
     from analyzer.parsers.base import NormalizedFailure, make_failure_id
@@ -352,9 +352,9 @@ def test_scorer_no_tier1_capped_at_40():
     g.add_edge(EvidenceEdge(src=fid, dst="cfg:0", relation="related_to", weight=1.0))
     score, _ = score_cluster("C1", [fid], g, [f])
     # raw_weight=4.0, int(60)=60, corroboration=min(3*5,20)=15, flaky=0, contradiction=0
-    # raw=75, tier1_count==0 and source_types present → cap at 40 → min(75,40)=40
-    # max(10, min(98, 40))=40
-    assert score == 40
+    # raw=75, tier1_count==0 and source_types present → cap at 55 → min(75,55)=55
+    # max(10, min(98, 55))=55
+    assert score == 55
 
 
 def test_scorer_contradiction_penalty():
@@ -371,7 +371,7 @@ def test_scorer_contradiction_penalty():
     score, justification = score_cluster("C1", [fid], g, [f])
     # raw_weight=0, corroboration=0, flaky=0
     # tier1_nodes_in_graph=[commit:abc], tier1_linked_to_cluster=[] → contradiction_penalty=15
-    # raw=0+0-0-15=-15, tier1_count==0 and no source_types → cap at 55 → min(-15,55)=-15
+    # raw=0+0-0-15=-15, tier1_count==0 and no source_types → cap at 40 → min(-15,40)=-15
     # max(10, min(98, -15))=10
     assert score == 10
     assert "contradiction" in justification
