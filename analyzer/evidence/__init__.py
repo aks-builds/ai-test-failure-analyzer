@@ -13,6 +13,8 @@ from .collectors.git_collector import GitCollector
 from .collectors.log_collector import LogCollector
 from .collectors.config_collector import ConfigCollector
 from .collectors.dep_diff_collector import DepDiffCollector
+from .collectors.contract_diff_collector import ContractDiffCollector
+from .collectors.ci_context_collector import CIContextCollector
 
 # Module-level shared registry — pre-registered with the three core collectors
 _REGISTRY = EvidenceRegistry()
@@ -20,6 +22,8 @@ _REGISTRY.register(GitCollector)
 _REGISTRY.register(LogCollector)
 _REGISTRY.register(ConfigCollector)
 _REGISTRY.register(DepDiffCollector)
+_REGISTRY.register(ContractDiffCollector)
+_REGISTRY.register(CIContextCollector)
 
 __all__ = [
     "scan_config", "scan_git_history", "scan_logs", "correlate", "cluster_failures",
@@ -27,5 +31,6 @@ __all__ = [
     "EvidenceEdge", "EvidenceGraph", "EvidenceNode",
     "EvidenceRegistry",
     "GitCollector", "LogCollector", "ConfigCollector", "DepDiffCollector",
+    "ContractDiffCollector", "CIContextCollector",
     "_REGISTRY",
 ]
