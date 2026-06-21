@@ -187,8 +187,23 @@ def analyze(
     # ── Phase 6: Correlate ─────────────────────────────────────────────────
     emit({"phase": 6, "name": "Cross-correlate evidence", "status": "started"})
     correlation = correlate(failures, git, logs, config)
-    clusters = cluster_failures(failures, correlation["matrix"])
-    emit({"phase": 6, "name": "Cross-correlate evidence", "status": "completed", "data": {"clusters": len(clusters)}})
+    # v2: use Jaccard-distance agglomerative clusterer with EvidenceGraph
+    from .intelligence.clusterer import cluster_failures_v2
+    from .evidence.graph import EvidenceGraph, EvidenceNode, EvidenceEdge
+    evidence_graph = EvidenceGraph()
+    # Build graph from legacy git data for backward compat
+    for commit in git.get("commits", []):
+        cnode = EvidenceNode(
+            id=f"commit:{commit['hash']}", type="commit",
+            ref=commit["hash"], weight=2.0,
+            excerpt=(commit.get("subject") or "")[:200],
+        )
+        evidence_graph.add_node(cnode)
+    clusters = cluster_failures_v2(failures, evidence_graph)
+    emit({
+        "phase": 6, "name": "Cross-correlate evidence", "status": "completed",
+        "data": {"clusters": len(clusters)},
+    })
 
     # ── Phase 7: Form hypotheses ───────────────────────────────────────────
     emit({"phase": 7, "name": "Form hypotheses", "status": "started"})

@@ -199,3 +199,76 @@ def test_flaky_detector_od_vic_and_od_brit_beat_od():
     assert failures_brit[0].flakiness_category == "OD-Brit", (
         f"Expected OD-Brit, got {failures_brit[0].flakiness_category}"
     )
+
+
+# ── Clusterer ─────────────────────────────────────────────────────────────────
+
+def test_clusterer_groups_shared_commit():
+    """Two failures sharing a git commit must end up in the same cluster."""
+    from analyzer.intelligence.clusterer import cluster_failures_v2
+    from analyzer.parsers.base import NormalizedFailure, make_failure_id
+    from analyzer.evidence.graph import EvidenceGraph, EvidenceEdge, EvidenceNode
+
+    def _f(title):
+        fid = make_failure_id("pytest", "suite", title, "test.py")
+        return NormalizedFailure(id=fid, framework="pytest", suite="suite",
+                                 title=title, file="test.py", status="failed")
+
+    fa, fb = _f("test_a"), _f("test_b")
+    g = EvidenceGraph()
+    commit_node = EvidenceNode(id="commit:abc", type="commit", ref="abc", weight=2.0, excerpt="")
+    g.add_node(commit_node)
+    g.add_node(EvidenceNode(id=fa.id, type="failure", ref=fa.file, weight=0.0, excerpt=""))
+    g.add_node(EvidenceNode(id=fb.id, type="failure", ref=fb.file, weight=0.0, excerpt=""))
+    g.add_edge(EvidenceEdge(src=fa.id, dst="commit:abc", relation="caused_by", weight=2.0))
+    g.add_edge(EvidenceEdge(src=fb.id, dst="commit:abc", relation="caused_by", weight=2.0))
+
+    clusters = cluster_failures_v2([fa, fb], g)
+    # Both failures share a commit → should be in same cluster
+    all_ids = [fid for c in clusters for fid in c["failure_ids"]]
+    assert fa.id in all_ids
+    assert fb.id in all_ids
+    assert len(clusters) == 1 or any(
+        fa.id in c["failure_ids"] and fb.id in c["failure_ids"] for c in clusters
+    )
+
+
+def test_clusterer_separates_unrelated_failures():
+    """Two completely unrelated failures must be in different clusters."""
+    from analyzer.intelligence.clusterer import cluster_failures_v2
+    from analyzer.parsers.base import NormalizedFailure, make_failure_id
+    from analyzer.evidence.graph import EvidenceGraph
+
+    def _f(title, error):
+        fid = make_failure_id("pytest", "suite", title, "test.py")
+        return NormalizedFailure(id=fid, framework="pytest", suite="suite",
+                                 title=title, file="test.py", status="failed",
+                                 error_message=error, http={"status_got": None, "status_expected": None, "method": None, "url": None})
+
+    fa = _f("test_auth", "401 unauthorized token expired")
+    fb = _f("test_db", "database connection timeout after 30s")
+    clusters = cluster_failures_v2([fa, fb], EvidenceGraph())
+    assert len(clusters) == 2
+
+
+def test_clusterer_returns_required_keys():
+    """Each cluster dict must have cluster_id, failure_ids, size keys."""
+    from analyzer.intelligence.clusterer import cluster_failures_v2
+    from analyzer.parsers.base import NormalizedFailure, make_failure_id
+    from analyzer.evidence.graph import EvidenceGraph
+
+    fid = make_failure_id("pytest", "suite", "test_x", "test.py")
+    f = NormalizedFailure(id=fid, framework="pytest", suite="suite",
+                          title="test_x", file="test.py", status="failed")
+    clusters = cluster_failures_v2([f], EvidenceGraph())
+    assert len(clusters) == 1
+    assert "cluster_id" in clusters[0]
+    assert "failure_ids" in clusters[0]
+    assert "size" in clusters[0]
+    assert clusters[0]["size"] == 1
+
+
+def test_clusterer_empty_input():
+    from analyzer.intelligence.clusterer import cluster_failures_v2
+    from analyzer.evidence.graph import EvidenceGraph
+    assert cluster_failures_v2([], EvidenceGraph()) == []
