@@ -50,10 +50,11 @@ def score_cluster(
         for f in cluster_failures
     ) else 0
 
-    # Contradiction penalty: -15 if tier1 nodes exist in graph but none are linked to cluster
-    tier1_nodes_in_graph = [n for n in graph.nodes.values() if n.weight >= 2.0]
-    tier1_linked_to_cluster = [n for n in linked_nodes if n.weight >= 2.0]
-    contradiction_penalty = 15 if (tier1_nodes_in_graph and not tier1_linked_to_cluster) else 0
+    # Contradiction penalty: -15 if cluster IS linked to evidence but all of it is Tier-2
+    # (evidence present but no Tier-1 node linked = weak signal only)
+    any_linked = bool(linked_nodes)
+    tier1_linked = any(n.weight >= 2.0 for n in linked_nodes)
+    contradiction_penalty = 15 if (any_linked and not tier1_linked) else 0
 
     raw = int(raw_weight * 15) + corroboration - flaky_penalty - contradiction_penalty
 

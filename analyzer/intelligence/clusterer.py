@@ -10,7 +10,7 @@ from analyzer.parsers.base import NormalizedFailure
 from analyzer.evidence.graph import EvidenceGraph
 from ._tfidf import cosine_similarity, build_tfidf
 
-_MERGE_THRESHOLD = 0.4    # distance ≤ this → same cluster
+_MERGE_THRESHOLD = 0.5    # distance ≤ this → same cluster
 _MAX_FAILURES = 300        # hard cap to keep O(n²) manageable
 _SILHOUETTE_THRESHOLD = 0.6  # fall back to singletons if avg silhouette < this
 
@@ -50,10 +50,12 @@ def _failure_distance(
     if sc_a is not None and sc_a == sc_b:
         d -= 0.2
 
-    # High error-message cosine similarity → moderate link (-0.2)
+    # High error-message cosine similarity → moderate/strong link
     cache_key = (min(a.id, b.id), max(a.id, b.id))
     sim = sim_cache.get(cache_key, -1.0)
-    if sim >= 0.85:
+    if sim >= 0.90:
+        d -= 0.35
+    elif sim >= 0.85:
         d -= 0.2
 
     # Same flakiness category → weak link (-0.1)

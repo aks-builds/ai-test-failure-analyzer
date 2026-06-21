@@ -6,8 +6,6 @@ Research basis:
 """
 from __future__ import annotations
 from analyzer.parsers.base import NormalizedFailure
-from ._tfidf import build_tfidf, cosine_similarity
-
 # FlaKat 7-category keyword signals
 _CATEGORY_SIGNALS: dict[str, list[str]] = {
     "ID": ["timeout", "timed out", "stale element", "detached", "intercept",
@@ -24,7 +22,6 @@ _CATEGORY_SIGNALS: dict[str, list[str]] = {
     "NDOD": ["flaky", "intermittent", "sometimes fails", "occasionally"],
 }
 
-_COSINE_THRESHOLD = 0.85
 _SCORE_CAP = 1.0
 
 
@@ -85,25 +82,10 @@ def detect_flaky(
     if not failures:
         return failures
 
-    # Signal 1: TF-IDF cosine similarity between error messages
-    error_texts = [(f.error_message or f.title or "") for f in failures]
-    tfidf_vecs = build_tfidf(error_texts)
-    similarity_scores: list[float] = [0.0] * len(failures)
-    for i in range(len(failures)):
-        for j in range(i + 1, len(failures)):
-            sim = cosine_similarity(tfidf_vecs[i], tfidf_vecs[j])
-            if sim >= _COSINE_THRESHOLD:
-                # Each test in the similar pair gets a boost
-                similarity_scores[i] = min(similarity_scores[i] + 0.3, 0.6)
-                similarity_scores[j] = min(similarity_scores[j] + 0.3, 0.6)
-
     for i, failure in enumerate(failures):
         score = 0.0
 
-        # Signal 1: TF-IDF similarity boost
-        score += similarity_scores[i]
-
-        # Signal 2: FlaKat category classification
+        # Signal 1: FlaKat category classification
         blob = " ".join(filter(None, (failure.error_message, failure.error_stack, failure.title)))
         category = _classify_category(blob)
         if category:

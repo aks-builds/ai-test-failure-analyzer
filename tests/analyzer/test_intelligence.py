@@ -112,10 +112,10 @@ def test_flaky_detector_network_error_scores_ud_category():
     assert failures[0].flakiness_category == "UD"
 
 
-def test_flaky_detector_similar_errors_increase_score():
+def test_flaky_detector_similar_errors_no_boost():
     from analyzer.intelligence.flaky_detector import detect_flaky
-    # Two tests with very similar error messages should each get a higher score
-    # than a single isolated test with the same message
+    # Similar error messages across multiple tests indicate shared root cause, NOT flakiness.
+    # TF-IDF similarity boost was removed — similar errors should NOT raise flakiness scores.
     isolated = [_make_failure("test_isolated", "Expected status 201 but got 404")]
     similar_pair = [
         _make_failure("test_a", "Expected status 201 but got 404 for POST /users"),
@@ -123,9 +123,12 @@ def test_flaky_detector_similar_errors_increase_score():
     ]
     detect_flaky(isolated, history=None)
     detect_flaky(similar_pair, history=None)
-    # Similar pair tests should have higher score due to TF-IDF signal
-    avg_pair = sum(f.flakiness_score or 0 for f in similar_pair) / 2
-    assert avg_pair >= (isolated[0].flakiness_score or 0)
+    # Each test is scored independently; similar messages do NOT boost flakiness
+    for f in similar_pair:
+        # These errors contain no FlaKat keyword signals → score must be 0
+        assert (f.flakiness_score or 0) == 0.0, (
+            f"{f.title} should have score=0 without FlaKat signals; got {f.flakiness_score}"
+        )
 
 
 def test_flaky_detector_order_dependent_error_scores_od():
@@ -358,21 +361,22 @@ def test_scorer_no_tier1_capped_at_55():
 
 
 def test_scorer_contradiction_penalty():
-    """Orphan Tier-1 node (in graph but not linked to cluster) fires -15 penalty."""
+    """Cluster linked only to Tier-2 evidence (no Tier-1 linked) fires -15 penalty."""
     from analyzer.intelligence.scorer import score_cluster
-    from analyzer.evidence.graph import EvidenceGraph, EvidenceNode
+    from analyzer.evidence.graph import EvidenceGraph, EvidenceNode, EvidenceEdge
     from analyzer.parsers.base import NormalizedFailure, make_failure_id
     fid = make_failure_id("pytest", "s", "t", "f.py")
     f = NormalizedFailure(id=fid, framework="pytest", suite="s", title="t", file="f.py",
                           status="failed")
     g = EvidenceGraph()
-    # Tier-1 node exists in graph but has NO edge from the cluster failure
-    g.add_node(EvidenceNode(id="commit:abc", type="commit", ref="abc", weight=2.0, excerpt=""))
+    # Tier-2 node linked from the failure (weight=1.0) — but NO Tier-1 node linked
+    g.add_node(EvidenceNode(id="src:0", type="source_code", ref="src/api.py", weight=1.0, excerpt=""))
+    g.add_edge(EvidenceEdge(src=fid, dst="src:0", relation="related_to", weight=1.0))
     score, justification = score_cluster("C1", [fid], g, [f])
-    # raw_weight=0, corroboration=0, flaky=0
-    # tier1_nodes_in_graph=[commit:abc], tier1_linked_to_cluster=[] → contradiction_penalty=15
-    # raw=0+0-0-15=-15, tier1_count==0 and no source_types → cap at 40 → min(-15,40)=-15
-    # max(10, min(98, -15))=10
+    # any_linked=True (src:0 is linked), tier1_linked=False → contradiction_penalty=15
+    # raw_weight=1.0, int(1.0*15)=15, corroboration=min(1*5,20)=5
+    # raw=15+5-0-15=5, tier1_count==0 and source_types present → cap at 55 → min(5,55)=5
+    # max(10, min(98, 5))=10
     assert score == 10
     assert "contradiction" in justification
 
