@@ -6,7 +6,9 @@
 
 **Root cause in seconds. Evidence, not intuition.**
 
-Feed it a **real** test result file — Playwright, Jest, Cypress, Newman, k6, or JUnit —
+Feed it a **real** test result file from any of **24 supported frameworks** — Playwright, Jest,
+Cypress, Newman, k6, JUnit, pytest, Vitest, WDIO, Mocha, Detox, Go test, RSpec, PHPUnit,
+NUnit, xUnit, Robot Framework, Allure, CTRF, SARIF, MSTest, Artillery, Gatling, Pact —
 and it traces back through your **real** git history, application logs, and config
 to surface the **actual** root cause, with a cited evidence chain and `file:line` precision.
 No guesses. No fixture noise. No repeating the obvious.
@@ -56,16 +58,34 @@ This tool does it automatically in seconds:
 
 ## Supported frameworks
 
+24 frameworks across all major ecosystems:
+
 | Framework | Format | Command |
 |---|---|---|
 | Playwright | JSON reporter | `playwright test --reporter=json` |
-| Jest / Vitest | JSON | `jest --json --outputFile=results.json` |
+| Jest | JSON | `jest --json --outputFile=results.json` |
+| Vitest | JSON | `vitest run --reporter=json` |
 | Cypress | Mochawesome JSON | `cypress run --reporter mochawesome` |
+| WebdriverIO | JSON | `wdio run wdio.conf.js` |
+| Mocha | JSON | `mocha --reporter json` |
+| Detox | JSON | `detox test --reporter json` |
 | pytest | JUnit XML | `pytest --junit-xml=results.xml` |
 | Newman (Postman) | JSON | `newman run col.json --reporters json --reporter-json-export results.json` |
 | k6 | Summary JSON | `k6 run --summary-export=results.json script.js` |
-| REST Assured | JUnit XML | standard Maven Surefire output |
-| Any JUnit-compatible | XML | TestNG, Karate, Insomnia CLI |
+| Go test | JSON | `go test ./... -json > results.json` |
+| RSpec | JSON | `rspec --format json --out results.json` |
+| PHPUnit | XML | `phpunit --log-junit results.xml` |
+| NUnit | XML | standard NUnit output |
+| xUnit | XML | standard xUnit output |
+| MSTest | TRX XML | standard MSTest output |
+| Robot Framework | XML | `robot --output output.xml` |
+| Artillery | JSON | `artillery run --output results.json` |
+| Gatling | JSON | standard Gatling simulation log |
+| Pact | JSON | standard Pact verification output |
+| Allure | JSON | `allure generate` results directory |
+| CTRF | JSON | any CTRF-compliant reporter |
+| SARIF | JSON | any SARIF-compliant scanner |
+| Any JUnit-compatible | XML | TestNG, Karate, REST Assured, Insomnia CLI |
 
 ## Install
 
@@ -112,6 +132,36 @@ ai-analyze analyze results.json
 ai-analyze analyze results.json --mode api-only    # force API-only (no source scan)
 ai-analyze analyze results.json --out report.md    # write report to file
 ai-analyze analyze results.json --create-issue     # file GitHub issue for top hypothesis
+ai-analyze analyze results.json --format ctrf      # output CTRF JSON instead of Markdown
+ai-analyze analyze results.json --enrich           # add AI root-cause annotations
+ai-analyze analyze results.json --no-cache         # bypass result cache
+ai-analyze analyze results.json --watch            # re-analyze on file change
+```
+
+### CTRF output
+
+```bash
+ai-analyze analyze results.json --format ctrf --out analysis.ctrf.json
+```
+
+The CTRF output embeds `ai` root-cause annotations per test and includes a `summary` block:
+
+```json
+{
+  "results": {
+    "tool": { "name": "ai-test-failure-analyzer", "version": "2.0.0" },
+    "summary": { "tests": 42, "passed": 38, "failed": 3, "skipped": 1, "other": 0 },
+    "tests": [
+      {
+        "name": "POST /api/clips → 404",
+        "status": "failed",
+        "duration": 312,
+        "ai": "Root cause [95%]: endpoint moved. Evidence: git+config.",
+        "extra": { "hypothesis_confidence": 95, "flakiness_score": 0.1 }
+      }
+    ]
+  }
+}
 ```
 
 ### MCP server (Claude Code / Cursor)
@@ -183,13 +233,17 @@ See [SECURITY.md](SECURITY.md) for the full threat model.
 
 ```
 analyzer/                   Python package (MCP server + CLI + analysis)
-  parsers/                  Framework parsers (Playwright, Jest, Cypress, Newman, k6, JUnit)
-  evidence/                 Evidence collection (git, logs, config)
-  render/                   Report rendering (Markdown, ANSI)
+  parsers/                  24 framework parsers (Playwright, Jest, Vitest, Cypress, WDIO,
+                            Mocha, Detox, pytest, Newman, k6, Go, RSpec, PHPUnit, NUnit,
+                            xUnit, MSTest, Robot Framework, Artillery, Gatling, Pact,
+                            Allure, CTRF, SARIF, JUnit-compatible)
+  evidence/                 Evidence collection (git, logs, config, flaky history)
+  intelligence/             Flaky detector, clusterer, enricher
+  render/                   Report rendering (Markdown, ANSI, CTRF)
   ui/                       User interfaces (CLI, TUI, Web)
   workspace_scanner.py      Phase 0 — mode detection, noise path discovery
   noise_filter.py           Evidence filtering and hypothesis deduplication
-  orchestrator.py           8-phase analysis pipeline
+  orchestrator.py           10-phase analysis pipeline
   hypothesis.py             Confidence scoring and hypothesis formation
 bin/cli.js                  Zero-dep Node wrapper (ai-analyze command)
 skills/ai-test-failure-analyzer/SKILL.md  Claude Code agent skill

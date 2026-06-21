@@ -45,6 +45,26 @@ class AnalysisResult:
     no_app_fault: bool = False
     phase_timings: dict = field(default_factory=dict)
 
+    def to_dict(self) -> dict:
+        base = {
+            "framework": self.framework,
+            "hypotheses": [h.to_dict() for h in self.hypotheses],
+            "elapsed_seconds": self.elapsed_seconds,
+            "phase_timings": self.phase_timings,
+            "suppressed_hypotheses": self.suppressed_hypotheses,
+            "no_app_fault": self.no_app_fault,
+        }
+        # v2 additions
+        base["flaky_tests"] = [
+            {"id": f.id, "title": f.title, "score": f.flakiness_score,
+             "category": f.flakiness_category}
+            for f in self.failures if (f.flakiness_score or 0) >= 0.5
+        ]
+        from .render.ctrf import render_ctrf_report
+        import json
+        base["ctrf_summary"] = json.loads(render_ctrf_report(self))["results"]["summary"]
+        return base
+
 
 # An "ask" callback is what each UI provides for clarifying questions.
 # It takes a Question id and returns the user's chosen answer (string).

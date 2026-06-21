@@ -1,6 +1,6 @@
 {
   "name": "ai-test-failure-analyzer",
-  "version": "1.0.2",
+  "version": "2.0.0",
   "description": "Root cause in seconds. Evidence, not intuition. Feed it a test result file — Playwright, Jest, Cypress, Newman, k6, or JUnit — and it traces back through your real git history, logs, and config to surface the actual fault. No guesses. No fixture noise.",
   "bin": {
     "ai-analyze": "bin/cli.js"
