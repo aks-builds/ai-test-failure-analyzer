@@ -11,6 +11,9 @@ _FRAMEWORK_LANGUAGE: dict[str, str] = {
     "rspec": "ruby", "phpunit": "php",
     "k6": "load", "artillery": "load", "gatling": "load",
     "newman": "api", "pact": "api",
+    "ctrf": "js",
+    "sarif": "unknown",
+    "allure": "java",
 }
 
 _INSTALL_PREFIX: dict[str, str] = {
@@ -40,6 +43,13 @@ _RUN_COMMAND: dict[str, str] = {
     "phpunit": "./vendor/bin/phpunit --filter methodName",
     "k6": "k6 run --verbose script.js",
     "newman": "newman run collection.json --verbose",
+    "artillery": "artillery run --output report.json",
+    "gatling": "mvn gatling:test",
+    "pact": "npm run test:pact",
+    "wdio": "npx wdio run wdio.conf.js",
+    "detox": "detox test --configuration ios.sim.debug",
+    "mocha": "npm test -- --reporter json",
+    "mstest": "dotnet test --logger trx",
 }
 
 

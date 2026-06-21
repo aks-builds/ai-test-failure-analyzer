@@ -53,6 +53,33 @@ def format_phase_line(phase: int | str, name: str, timing_seconds: float | None)
     return f"  ✓ Phase {phase}  {name:<30}{suffix}"
 
 
+def render_phase_timings(result: "AnalysisResult") -> str:
+    """Render all phase timings from an AnalysisResult as a multi-line string.
+
+    Keys in phase_timings follow the pattern "<phase>_<name>" e.g.
+    "2.5_detect_flaky" or "5.5_collect_evidence".  We split on the first
+    underscore to recover the phase number and build a human-readable name
+    from the remainder.
+
+    Args:
+        result: Completed AnalysisResult with a phase_timings dict.
+
+    Returns:
+        A newline-joined string of formatted phase lines, or "" if empty.
+    """
+    timings: dict = getattr(result, "phase_timings", {}) or {}
+    if not timings:
+        return ""
+    lines: list[str] = []
+    for key, elapsed in sorted(timings.items(), key=lambda kv: kv[0]):
+        # key looks like "2.5_detect_flaky" — split on first underscore
+        parts = key.split("_", 1)
+        phase_num = parts[0]
+        phase_name = parts[1].replace("_", " ") if len(parts) > 1 else key
+        lines.append(format_phase_line(phase=phase_num, name=phase_name, timing_seconds=elapsed))
+    return "\n".join(lines)
+
+
 class IssueModal(ModalScreen[bool]):
     """Modal for creating a GitHub issue from the top hypothesis."""
 
@@ -185,11 +212,15 @@ class AnalyzerApp(App):
         # Status bar
         r = self.result
         failed = sum(1 for f in r.failures if f.status == "failed")
-        self.query_one("#status", Static).update(
+        timing_block = render_phase_timings(r)
+        status_text = (
             f"[bold cyan]{r.framework}[/bold cyan] · "
             f"{len(r.failures)} tests · [red]{failed} failing[/red] · "
             f"{len(r.hypotheses)} hypotheses · {r.elapsed_seconds:.1f}s"
         )
+        if timing_block:
+            status_text = status_text + "\n" + timing_block
+        self.query_one("#status", Static).update(status_text)
 
         # Triage table
         table = self.query_one("#triage", DataTable)

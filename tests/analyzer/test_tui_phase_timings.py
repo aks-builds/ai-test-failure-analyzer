@@ -55,3 +55,47 @@ def test_phase_timings_key_lookup():
     assert "2.5" in line
     assert "Detect flaky tests" in line
     assert "42ms" in line
+
+
+def test_render_phase_timings_with_populated_result():
+    """render_phase_timings iterates result.phase_timings and returns formatted lines."""
+    from types import SimpleNamespace
+    from analyzer.ui.tui import render_phase_timings
+
+    result = SimpleNamespace(
+        phase_timings={
+            "0_scan_workspace": 0.045,
+            "2.5_detect_flaky": 0.012,
+            "5.5_collect_evidence": 0.300,
+        }
+    )
+    output = render_phase_timings(result)
+
+    # Each phase key should produce a line containing the phase number
+    assert "0" in output
+    assert "scan workspace" in output
+    assert "45ms" in output
+
+    assert "2.5" in output
+    assert "detect flaky" in output
+    assert "12ms" in output
+
+    assert "5.5" in output
+    assert "collect evidence" in output
+    assert "300ms" in output
+
+    # All lines must contain the checkmark
+    for line in output.splitlines():
+        assert "✓" in line
+
+    # ms suffix must appear (at least one timing > 0)
+    assert "ms" in output
+
+
+def test_render_phase_timings_empty_returns_empty_string():
+    """render_phase_timings returns '' when phase_timings is empty or absent."""
+    from types import SimpleNamespace
+    from analyzer.ui.tui import render_phase_timings
+
+    assert render_phase_timings(SimpleNamespace(phase_timings={})) == ""
+    assert render_phase_timings(SimpleNamespace()) == ""
