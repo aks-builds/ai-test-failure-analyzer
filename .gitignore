@@ -41,3 +41,4 @@ analysis.json
 .env
 .env.local
 .env.*.local
+.atfa/

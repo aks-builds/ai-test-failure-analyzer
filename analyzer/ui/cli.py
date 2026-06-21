@@ -45,6 +45,7 @@ def run(
     repo: Optional[str] = None,
     out: Optional[str] = None,
     format: str = "markdown",
+    no_cache: bool = False,
 ) -> int:
     """Run the CLI analysis flow. Returns exit code (0 = success)."""
     console = Console()
@@ -85,6 +86,7 @@ def run(
             mode=mode,
             ask=ask,
             progress=progress,
+            no_cache=no_cache,
         )
     except FileNotFoundError as e:
         console.print(f"\n[red]✗[/red] {e}")

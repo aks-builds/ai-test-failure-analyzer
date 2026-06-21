@@ -69,6 +69,7 @@ def analyze(
     mode: str = "auto",
     ask: AskFn | None = None,
     progress: Callable[[dict], None] | None = None,
+    no_cache: bool = False,
 ) -> AnalysisResult:
     """Run the full eight-phase analysis. Synchronous, with optional progress callback.
 
@@ -121,6 +122,15 @@ def analyze(
     if not os.path.isfile(_joined):
         raise FileNotFoundError("Test results file not found.")
     safe_results_path = Path(_joined)
+
+    # ── Cache check ───────────────────────────────────────────────────────────
+    from .cache import CacheKey, load_cached, save_cache
+    cache_key = CacheKey.compute(workspace, safe_results_path)
+    if not no_cache:
+        cached = load_cached(workspace, cache_key)
+        if cached is not None:
+            emit({"phase": "cache", "name": "Cache hit", "status": "completed"})
+            return cached
 
     if framework == "auto":
         detected = detect(safe_results_path)
@@ -272,7 +282,7 @@ def analyze(
     except Exception:
         pass  # history write-back is best-effort
 
-    return AnalysisResult(
+    result = AnalysisResult(
         framework=detected_fw,
         failures=failures,
         git=git,
@@ -288,3 +298,8 @@ def analyze(
         no_app_fault=no_app_fault,
         phase_timings=phase_timings,
     )
+
+    if not no_cache:
+        save_cache(workspace, cache_key, result)
+
+    return result

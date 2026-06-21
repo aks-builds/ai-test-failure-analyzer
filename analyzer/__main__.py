@@ -50,6 +50,7 @@ def cmd_analyze(
     repo: Optional[str] = typer.Option(None, "--repo", help="owner/repo for issue creation"),
     out: Optional[str] = typer.Option(None, "--out", "-o", help="Write Markdown report to this path"),
     format: str = typer.Option("markdown", "--format", help="markdown|json|ctrf"),
+    no_cache: bool = typer.Option(False, "--no-cache", help="Skip reading and writing the analysis cache"),
 ) -> None:
     """Run the full eight-phase analysis (default subcommand)."""
     from .ui.cli import run
@@ -64,8 +65,54 @@ def cmd_analyze(
         repo=repo,
         out=out,
         format=format,
+        no_cache=no_cache,
     )
     raise typer.Exit(code=code)
+
+
+@app.command(name="watch")
+def cmd_watch(
+    results: str = typer.Option("test-results/results.json", "--results", "-r", help="Path to test results file"),
+    workspace: Optional[str] = typer.Option(None, "--workspace", "-w", help="Workspace root (defaults to CWD)"),
+    framework: str = typer.Option("auto", "--framework", "-f", help="auto|playwright|pytest|jest|vitest|cypress|webdriverio|junit"),
+    mode: str = typer.Option("auto", "--mode", "-m", help="auto|api-only (force API_ONLY mode)"),
+    non_interactive: bool = typer.Option(True, "--non-interactive/--interactive", help="Disable clarifying questions"),
+    out: Optional[str] = typer.Option(None, "--out", "-o", help="Write Markdown report to this path"),
+    format: str = typer.Option("markdown", "--format", help="markdown|json|ctrf"),
+) -> None:
+    """Watch results file and re-analyze on every change (2s polling, Ctrl-C to stop)."""
+    import os as _os
+    import time as _time
+    from .ui.cli import run as _run
+
+    results_path = results
+    last_mtime = None
+    typer.echo(f"Watching {results_path} — press Ctrl+C to stop")
+    try:
+        while True:
+            try:
+                mtime = _os.stat(results_path).st_mtime
+            except OSError:
+                _time.sleep(2)
+                continue
+            if mtime != last_mtime:
+                last_mtime = mtime
+                typer.echo("\n--- Change detected, re-analyzing ---")
+                # Clear screen
+                typer.echo("\033[2J\033[H", nl=False)
+                _run(
+                    results_path=results_path,
+                    workspace=workspace,
+                    framework=framework,
+                    mode=mode,
+                    non_interactive=non_interactive,
+                    out=out,
+                    format=format,
+                    no_cache=True,  # always fresh in watch mode
+                )
+            _time.sleep(2)
+    except KeyboardInterrupt:
+        typer.echo("\nWatch mode stopped.")
 
 
 @app.command(name="serve-stdio")
