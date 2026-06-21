@@ -5,12 +5,14 @@ Research basis: arXiv 2504.16777 — agglomerative clustering on Jaccard distanc
 between failure run-sets; silhouette threshold 0.6 for automated grouping.
 """
 from __future__ import annotations
+import warnings
 from analyzer.parsers.base import NormalizedFailure
-from analyzer.evidence.graph import EvidenceGraph, EvidenceEdge
+from analyzer.evidence.graph import EvidenceGraph
 from ._tfidf import cosine_similarity, build_tfidf
 
-_MERGE_THRESHOLD = 0.4   # distance ≤ this → same cluster
-_MAX_FAILURES = 300       # hard cap to keep O(n²) manageable
+_MERGE_THRESHOLD = 0.4    # distance ≤ this → same cluster
+_MAX_FAILURES = 300        # hard cap to keep O(n²) manageable
+_SILHOUETTE_THRESHOLD = 0.6  # fall back to singletons if avg silhouette < this
 
 
 def _commit_ids(graph: EvidenceGraph, failure_id: str) -> set[str]:
@@ -77,6 +79,12 @@ def cluster_failures_v2(
 
     # Hard cap: prevent O(n²) blowup on pathological inputs
     if len(only_failed) > _MAX_FAILURES:
+        warnings.warn(
+            f"cluster_failures_v2: {len(only_failed)} failures exceeds cap of {_MAX_FAILURES}; "
+            f"truncating to first {_MAX_FAILURES}",
+            RuntimeWarning,
+            stacklevel=2,
+        )
         only_failed = only_failed[:_MAX_FAILURES]
 
     n = len(only_failed)
@@ -102,16 +110,16 @@ def cluster_failures_v2(
             return 1.0
         return sum(_failure_distance(a, b, graph, sim_cache) for a, b in pairs) / len(pairs)
 
-    # Agglomerative merge: find closest pair below threshold, merge, repeat
+    # Agglomerative merge: find closest pair at or below threshold, merge, repeat
     changed = True
     while changed and len(cluster_members) > 1:
         changed = False
-        best_dist = _MERGE_THRESHOLD
+        best_dist = _MERGE_THRESHOLD + 1.0  # sentinel above any real distance
         best_pair = (-1, -1)
         for i in range(len(cluster_members)):
             for j in range(i + 1, len(cluster_members)):
                 d = _cluster_distance(cluster_members[i], cluster_members[j])
-                if d < best_dist:
+                if d <= _MERGE_THRESHOLD and d < best_dist:
                     best_dist = d
                     best_pair = (i, j)
         if best_pair[0] >= 0:
@@ -120,15 +128,53 @@ def cluster_failures_v2(
             cluster_members.pop(j)
             changed = True
 
+    # Silhouette check: fall back to singleton clusters if quality is poor
+    if len(cluster_members) > 1:
+        # Build an index from failure id pair to distance for quick lookup
+        def _point_distance(i: int, j: int) -> float:
+            key = (min(only_failed[i].id, only_failed[j].id),
+                   max(only_failed[i].id, only_failed[j].id))
+            return 1.0 - sim_cache.get(key, 0.0)
+
+        # Build a map from point index → cluster index
+        point_to_cluster: list[int] = [0] * n
+        for cidx, members in enumerate(cluster_members):
+            for m in members:
+                point_to_cluster[m] = cidx
+
+        sil_scores: list[float] = []
+        for i in range(n):
+            cidx = point_to_cluster[i]
+            cluster = cluster_members[cidx]
+            # a(i): mean distance to other points in same cluster
+            same = [m for m in cluster if m != i]
+            a_i = (sum(_point_distance(i, m) for m in same) / len(same)) if same else 0.0
+            # b(i): mean distance to points in nearest other cluster
+            b_i = float("inf")
+            for other_cidx, other_cluster in enumerate(cluster_members):
+                if other_cidx == cidx:
+                    continue
+                mean_d = sum(_point_distance(i, m) for m in other_cluster) / len(other_cluster)
+                if mean_d < b_i:
+                    b_i = mean_d
+            if b_i == float("inf"):
+                b_i = 0.0
+            denom = max(a_i, b_i)
+            s_i = (b_i - a_i) / denom if denom > 0 else 0.0
+            sil_scores.append(s_i)
+
+        avg_silhouette = sum(sil_scores) / len(sil_scores) if sil_scores else 0.0
+        if avg_silhouette < _SILHOUETTE_THRESHOLD:
+            cluster_members = [[i] for i in range(n)]
+
     # Build output dicts matching the shape expected by form_hypotheses
     out = []
     for idx, members in enumerate(cluster_members, start=1):
         cluster_failures = [only_failed[m] for m in members]
         fids = [f.id for f in cluster_failures]
-        shared_commits = sorted({
-            e.dst for f in cluster_failures
-            for e in graph.edges
-            if e.src == f.id and e.relation == "caused_by"
+        shared_commits = list({
+            e.dst for e in graph.edges
+            if e.src in fids and e.relation == "caused_by" and e.dst.startswith("commit:")
         })
         endpoints = sorted({
             (f.http.get("url") or "") for f in cluster_failures

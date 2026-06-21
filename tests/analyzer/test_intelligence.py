@@ -272,3 +272,30 @@ def test_clusterer_empty_input():
     from analyzer.intelligence.clusterer import cluster_failures_v2
     from analyzer.evidence.graph import EvidenceGraph
     assert cluster_failures_v2([], EvidenceGraph()) == []
+
+
+def test_clusterer_silhouette_fallback():
+    """4 heterogeneous failures should fall back to 4 singleton clusters (silhouette < 0.6)."""
+    from analyzer.intelligence.clusterer import cluster_failures_v2
+    from analyzer.parsers.base import NormalizedFailure, make_failure_id
+    from analyzer.evidence.graph import EvidenceGraph
+
+    def _f(title, error):
+        fid = make_failure_id("pytest", "suite", title, f"{title}.py")
+        return NormalizedFailure(
+            id=fid, framework="pytest", suite="suite",
+            title=title, file=f"{title}.py", status="failed",
+            error_message=error,
+        )
+
+    # Four completely different error types — no shared words, no shared commits
+    fa = _f("test_auth",    "401 unauthorized jwt token expired invalid signature")
+    fb = _f("test_db",      "database connection refused postgresql port 5432 timeout")
+    fc = _f("test_render",  "segmentation fault core dumped memory address 0x0000")
+    fd = _f("test_network", "dns lookup failed nxdomain hostname resolution error")
+
+    clusters = cluster_failures_v2([fa, fb, fc, fd], EvidenceGraph())
+    # Silhouette should be < 0.6 for these heterogeneous failures → fallback to 4 singletons
+    assert len(clusters) == 4, (
+        f"Expected 4 singleton clusters (silhouette fallback), got {len(clusters)}"
+    )

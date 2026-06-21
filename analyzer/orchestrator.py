@@ -199,6 +199,20 @@ def analyze(
             excerpt=(commit.get("subject") or "")[:200],
         )
         evidence_graph.add_node(cnode)
+    # Wire failure→commit edges: link each failure to commits that touch its file
+    for failure in failures:
+        if not failure.file:
+            continue
+        for commit in git.get("commits", []):
+            changed_files = commit.get("files", []) or []
+            if any(failure.file in (cf or "") or (cf or "") in failure.file
+                   for cf in changed_files):
+                evidence_graph.add_edge(EvidenceEdge(
+                    src=failure.id,
+                    dst=f"commit:{commit['hash']}",
+                    relation="caused_by",
+                    weight=2.0,
+                ))
     clusters = cluster_failures_v2(failures, evidence_graph)
     emit({
         "phase": 6, "name": "Cross-correlate evidence", "status": "completed",
