@@ -47,8 +47,18 @@ class Hypothesis:
 
 
 def _score(cluster: dict, has_git: bool, has_logs: bool, has_config: bool) -> tuple[int, str]:
-    """Confidence scoring per the SKILL.md rubric."""
-    sources = 1  # always have test output
+    """Delegates to quality-weighted scorer when graph is available.
+    Falls back to legacy source-count formula for backward compat."""
+    # The graph is passed via cluster["_graph"] if set by orchestrator (v2 path).
+    # Without it, use legacy formula.
+    graph = cluster.get("_graph")
+    failures = cluster.get("_failures", [])
+    failure_ids = cluster.get("failure_ids", [])
+    if graph is not None:
+        from .intelligence.scorer import score_cluster
+        return score_cluster(cluster.get("cluster_id", "C?"), failure_ids, graph, failures)
+    # Legacy path (v1 behavior)
+    sources = 1
     notes = ["test output observed"]
     if cluster.get("shared_commits") and has_git:
         sources += 1
@@ -62,8 +72,6 @@ def _score(cluster: dict, has_git: bool, has_logs: bool, has_config: bool) -> tu
     if has_config:
         sources += 1
         notes.append("config evidence available")
-
-    # 90-99: 4+ independent sources; 70-89: 3; 50-69: 2; 30-49: 1 with weak signal
     if sources >= 4:
         score = 90 + min(sources - 4, 8)
     elif sources == 3:
@@ -71,9 +79,7 @@ def _score(cluster: dict, has_git: bool, has_logs: bool, has_config: bool) -> tu
     elif sources == 2:
         score = 60
     else:
-        # Single source — but did we at least see a clear pattern (e.g. 404 across endpoints)?
         score = 45 if cluster.get("size", 0) >= 2 else 35
-
     return score, " · ".join(notes)
 
 

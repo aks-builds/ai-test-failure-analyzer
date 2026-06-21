@@ -274,6 +274,70 @@ def test_clusterer_empty_input():
     assert cluster_failures_v2([], EvidenceGraph()) == []
 
 
+# ── Scorer ────────────────────────────────────────────────────────────────────
+
+def test_scorer_single_source_capped_at_55():
+    """With only test output (no Tier-1 evidence), score must be ≤ 55."""
+    from analyzer.intelligence.scorer import score_cluster
+    from analyzer.evidence.graph import EvidenceGraph
+    from analyzer.parsers.base import NormalizedFailure, make_failure_id
+    fid = make_failure_id("pytest", "s", "t", "f.py")
+    f = NormalizedFailure(id=fid, framework="pytest", suite="s", title="t", file="f.py",
+                          status="failed")
+    score, justification = score_cluster("C1", [fid], EvidenceGraph(), [f])
+    assert score <= 55
+    assert isinstance(justification, str)
+
+
+def test_scorer_tier1_evidence_increases_score():
+    """Adding a Tier-1 commit node must increase score above single-source cap."""
+    from analyzer.intelligence.scorer import score_cluster
+    from analyzer.evidence.graph import EvidenceGraph, EvidenceNode, EvidenceEdge
+    from analyzer.parsers.base import NormalizedFailure, make_failure_id
+    fid = make_failure_id("pytest", "s", "t", "f.py")
+    f = NormalizedFailure(id=fid, framework="pytest", suite="s", title="t", file="f.py",
+                          status="failed")
+    g = EvidenceGraph()
+    g.add_node(EvidenceNode(id=fid, type="failure", ref="f.py", weight=0.0, excerpt=""))
+    g.add_node(EvidenceNode(id="commit:abc", type="commit", ref="abc", weight=2.0, excerpt="rename"))
+    g.add_node(EvidenceNode(id="log:0", type="log_line", ref="app.log:42", weight=2.0, excerpt="ERROR"))
+    g.add_edge(EvidenceEdge(src=fid, dst="commit:abc", relation="caused_by", weight=2.0))
+    g.add_edge(EvidenceEdge(src=fid, dst="log:0", relation="related_to", weight=2.0))
+    score, _ = score_cluster("C1", [fid], g, [f])
+    assert score > 55
+
+
+def test_scorer_flaky_test_penalises_score():
+    """A probable flake must reduce confidence."""
+    from analyzer.intelligence.scorer import score_cluster
+    from analyzer.evidence.graph import EvidenceGraph, EvidenceNode, EvidenceEdge
+    from analyzer.parsers.base import NormalizedFailure, make_failure_id
+    fid = make_failure_id("pytest", "s", "t", "f.py")
+    f_normal = NormalizedFailure(id=fid, framework="pytest", suite="s", title="t",
+                                 file="f.py", status="failed", flakiness_score=0.0)
+    f_flaky  = NormalizedFailure(id=fid, framework="pytest", suite="s", title="t",
+                                 file="f.py", status="failed", flakiness_score=0.9)
+    g = EvidenceGraph()
+    g.add_node(EvidenceNode(id=fid, type="failure", ref="f.py", weight=0.0, excerpt=""))
+    g.add_node(EvidenceNode(id="commit:abc", type="commit", ref="abc", weight=2.0, excerpt=""))
+    g.add_edge(EvidenceEdge(src=fid, dst="commit:abc", relation="caused_by", weight=2.0))
+    score_normal, _ = score_cluster("C1", [fid], g, [f_normal])
+    score_flaky, _  = score_cluster("C1", [fid], g, [f_flaky])
+    assert score_flaky < score_normal
+
+
+def test_scorer_score_always_in_valid_range():
+    """Score must always be between 10 and 98 inclusive."""
+    from analyzer.intelligence.scorer import score_cluster
+    from analyzer.evidence.graph import EvidenceGraph
+    from analyzer.parsers.base import NormalizedFailure, make_failure_id
+    fid = make_failure_id("pytest", "s", "t", "f.py")
+    f = NormalizedFailure(id=fid, framework="pytest", suite="s", title="t",
+                          file="f.py", status="failed", flakiness_score=1.0)
+    score, _ = score_cluster("C1", [fid], EvidenceGraph(), [f])
+    assert 10 <= score <= 98
+
+
 def test_clusterer_silhouette_fallback():
     """4 heterogeneous failures should fall back to 4 singleton clusters (silhouette < 0.6)."""
     from analyzer.intelligence.clusterer import cluster_failures_v2

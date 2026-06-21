@@ -219,6 +219,12 @@ def analyze(
         "data": {"clusters": len(clusters)},
     })
 
+    # Inject graph and failures into cluster dicts for quality-weighted scorer
+    id_to_failure = {f.id: f for f in failures}
+    for c in clusters:
+        c["_graph"] = evidence_graph
+        c["_failures"] = [id_to_failure[i] for i in c["failure_ids"] if i in id_to_failure]
+
     # ── Phase 7: Form hypotheses ───────────────────────────────────────────
     emit({"phase": 7, "name": "Form hypotheses", "status": "started"})
     hypotheses_raw = form_hypotheses(failures, clusters, correlation["matrix"], git, logs, config)
