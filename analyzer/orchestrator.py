@@ -72,13 +72,11 @@ AskFn = Callable[[str], str]
 
 
 def _no_op_ask(qid: str) -> str:
-    """Non-interactive fallback. Returns sensible defaults."""
+    """Non-interactive fallback. Returns declared default only — never guesses from choices list."""
     from .elicit import get
     q = get(qid)
     if q.default is not None:
         return q.default
-    if q.choices:
-        return q.choices[0]
     return ""
 
 

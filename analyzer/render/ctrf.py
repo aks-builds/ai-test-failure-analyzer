@@ -16,8 +16,8 @@ _CTRF_STATUS_MAP = {"flaky": "other", "error": "failed"}
 
 def _get_tool_version() -> str:
     try:
-        from importlib.metadata import version
-        return version("ai-test-failure-analyzer")
+        from .. import __version__
+        return __version__
     except Exception:
         return "2.0.0"
 

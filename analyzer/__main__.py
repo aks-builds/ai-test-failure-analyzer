@@ -160,8 +160,10 @@ def cmd_web(
 def cmd_info() -> None:
     """Show server / framework info."""
     from . import __version__
+    from .parsers import FRAMEWORKS
+    fw_list = ", ".join(sorted(FRAMEWORKS.keys()))
     typer.echo(f"ai-test-failure-analyzer {__version__}")
-    typer.echo("Supported frameworks: playwright, pytest, jest, vitest, cypress, webdriverio, junit, newman, k6")
+    typer.echo(f"Supported frameworks ({len(FRAMEWORKS)}): {fw_list}")
     typer.echo("Transports: stdio, streamable-http")
 
 
