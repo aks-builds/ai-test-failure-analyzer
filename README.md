@@ -36,7 +36,7 @@ No guesses. No fixture noise. No repeating the obvious.
 ### Report
 
 <!-- cliproof:start id=report -->
-![ai-analyze report — triage table and hypothesis cards](.github/media/report.svg)
+![ai-analyze markdown report — triage table, confidence scores and hypothesis cards](.github/media/report.png)
 <!-- cliproof:end id=report -->
 
 ### TUI
