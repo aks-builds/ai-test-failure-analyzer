@@ -15,6 +15,8 @@ from .collectors.config_collector import ConfigCollector
 from .collectors.dep_diff_collector import DepDiffCollector
 from .collectors.contract_diff_collector import ContractDiffCollector
 from .collectors.ci_context_collector import CIContextCollector
+from .collectors.otel_collector import OtelCollector
+from .collectors.flaky_history_collector import FlakyHistoryCollector
 
 # Module-level shared registry — pre-registered with the three core collectors
 _REGISTRY = EvidenceRegistry()
@@ -24,6 +26,8 @@ _REGISTRY.register(ConfigCollector)
 _REGISTRY.register(DepDiffCollector)
 _REGISTRY.register(ContractDiffCollector)
 _REGISTRY.register(CIContextCollector)
+_REGISTRY.register(OtelCollector)
+_REGISTRY.register(FlakyHistoryCollector)
 
 __all__ = [
     "scan_config", "scan_git_history", "scan_logs", "correlate", "cluster_failures",
@@ -32,5 +36,6 @@ __all__ = [
     "EvidenceRegistry",
     "GitCollector", "LogCollector", "ConfigCollector", "DepDiffCollector",
     "ContractDiffCollector", "CIContextCollector",
+    "OtelCollector", "FlakyHistoryCollector",
     "_REGISTRY",
 ]

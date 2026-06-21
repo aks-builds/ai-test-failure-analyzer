@@ -145,8 +145,8 @@ def analyze(
     from .intelligence.flaky_detector import detect_flaky
     emit({"phase": "2.5", "name": "Detect flaky tests", "status": "started"})
     _t25 = time.monotonic()
-    # history is populated later by FlakyHistoryCollector (Phase 4 plan).
-    # For now pass None — history-based scoring activates in Phase 4.
+    # history is populated later by FlakyHistoryCollector (Phase 5.5).
+    # For now pass None — history-based scoring will be wired after evidence collection.
     failures = detect_flaky(failures, history=None)
     flaky_count = sum(1 for f in failures if (f.flakiness_score or 0) >= 0.5)
     phase_timings["2.5_detect_flaky"] = time.monotonic() - _t25
@@ -177,6 +177,13 @@ def analyze(
         choice = ask("no_git_history")
         if choice == "no":
             raise RuntimeError("Analysis cancelled — git history requested.")
+
+    # After Phase 5.5, extract history for flaky detector and re-score
+    _history_bundle = bundles.get("flaky_history")
+    _history_data = (_history_bundle.legacy.get("history") if _history_bundle and _history_bundle.available else None)
+    if _history_data is not None:
+        failures = detect_flaky(failures, history=_history_data)
+        flaky_count = sum(1 for f in failures if (f.flakiness_score or 0) >= 0.5)
 
     active = [name for name, b in bundles.items() if b.available]
     emit({
@@ -253,6 +260,17 @@ def analyze(
         no_app_fault=no_app_fault,
     )
     emit({"phase": 8, "name": "Produce report", "status": "completed", "data": {"bytes": len(report_md)}})
+
+    # Write-back run history for future flaky detection
+    import uuid as _uuid
+    import datetime as _dt
+    from .evidence.collectors.flaky_history_collector import append_run
+    _run_id = _uuid.uuid4().hex[:12]
+    _timestamp = _dt.datetime.utcnow().isoformat()
+    try:
+        append_run(workspace, _run_id, _timestamp, detected_fw, failures)
+    except Exception:
+        pass  # history write-back is best-effort
 
     return AnalysisResult(
         framework=detected_fw,
