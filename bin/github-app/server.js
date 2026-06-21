@@ -10,7 +10,7 @@
 "use strict";
 
 const http = require("http");
-const { createHmac } = require("crypto");
+const { createHmac, timingSafeEqual } = require("crypto");
 const { execFileSync } = require("child_process");
 const https = require("https");
 const os = require("os");
@@ -20,10 +20,15 @@ const fs = require("fs");
 const PORT = parseInt(process.env.PORT || "3000", 10);
 const WEBHOOK_SECRET = process.env.GITHUB_WEBHOOK_SECRET || "";
 
+if (!WEBHOOK_SECRET) {
+  console.error("[ERROR] GITHUB_WEBHOOK_SECRET is not set. All webhook requests will be rejected.");
+}
+
 function verifySignature(body, signature) {
-  if (!WEBHOOK_SECRET) return true; // dev mode only
+  if (!WEBHOOK_SECRET) return false;
   const expected = "sha256=" + createHmac("sha256", WEBHOOK_SECRET).update(body).digest("hex");
-  return expected === signature;
+  if (expected.length !== signature.length) return false;
+  return timingSafeEqual(Buffer.from(expected), Buffer.from(signature));
 }
 
 function downloadArtifact(url, token, dest) {
@@ -132,8 +137,16 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  const MAX_BODY = 1_048_576; // 1 MB
   let body = "";
-  req.on("data", chunk => body += chunk);
+  req.on("data", chunk => {
+    body += chunk;
+    if (body.length > MAX_BODY) {
+      res.writeHead(413, { "Content-Type": "text/plain" });
+      res.end("Payload Too Large");
+      req.destroy();
+    }
+  });
   req.on("end", async () => {
     const sig = req.headers["x-hub-signature-256"] || "";
     if (!verifySignature(body, sig)) {

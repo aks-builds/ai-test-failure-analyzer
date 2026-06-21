@@ -4,9 +4,7 @@
   "description": "GitHub App for ai-test-failure-analyzer — posts analysis as PR comments",
   "main": "server.js",
   "engines": { "node": ">=18" },
-  "dependencies": {
-    "@octokit/webhooks": "^13.0.0"
-  },
+  "dependencies": {},
   "scripts": {
     "start": "node server.js",
     "test": "exit 0"

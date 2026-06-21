@@ -20,6 +20,9 @@ jobs:
       - name: Extract version
         id: version
         run: echo "VERSION=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+      - name: Extract major version
+        id: major
+        run: echo "MAJOR=$(echo '${{ steps.version.outputs.VERSION }}' | cut -d. -f1)" >> $GITHUB_OUTPUT
       - uses: docker/build-push-action@v5
         with:
           context: .
@@ -27,4 +30,4 @@ jobs:
           tags: |
             ghcr.io/${{ github.repository }}:latest
             ghcr.io/${{ github.repository }}:${{ steps.version.outputs.VERSION }}
-            ghcr.io/${{ github.repository }}:${{ steps.version.outputs.VERSION.split('.')[0] }}
+            ghcr.io/${{ github.repository }}:${{ steps.major.outputs.MAJOR }}
