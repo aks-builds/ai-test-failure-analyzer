@@ -6,7 +6,9 @@ import os
 from pathlib import Path
 
 from .base import NormalizedFailure, Parser
+from .allure_json import AllureJsonParser
 from .artillery_json import ArtilleryJsonParser
+from .ctrf_json import CTRFJsonParser
 from .cypress_json import CypressJsonParser
 from .detox_json import DetoxJsonParser
 from .gatling_log import GatlingLogParser
@@ -15,6 +17,7 @@ from .jest_json import JestJsonParser
 from .junit_generic import JUnitXmlParser
 from .k6_json import K6JsonParser
 from .mocha_json import MochaJsonParser
+from .mstest_xml import MSTestXmlParser
 from .newman_json import NewmanJsonParser
 from .nunit_xml import NUnitXmlParser
 from .pact_json import PactJsonParser
@@ -23,16 +26,22 @@ from .playwright_json import PlaywrightJsonParser
 from .pytest_junit import PytestJUnitParser
 from .rspec_json import RSpecJsonParser
 from .robot_xml import RobotXmlParser
+from .sarif_json import SARIFJsonParser
 from .vitest_json import VitestJsonParser
 from .wdio_json import WdioJsonParser
 from .xunit_xml import XUnitXmlParser
 
 # Order matters: most specific first.
+# CTRF/SARIF/Allure go first — most specific JSON fingerprints.
 # Newman and k6 before generic JSON parsers; JUnit XML fallback is last.
 # Vitest must precede Jest — "vitestVersion" key distinguishes them.
 # Go NDJSON before generic JSON; PHPUnit/NUnit/xUnit/Robot before JUnit fallback.
 # Gatling TSV before JSON parsers; Artillery/Pact before generic JSON.
+# MSTest goes just before JUnit fallback (after Robot Framework).
 PARSERS: list[type[Parser]] = [
+    CTRFJsonParser,
+    SARIFJsonParser,
+    AllureJsonParser,
     PlaywrightJsonParser,
     NewmanJsonParser,
     K6JsonParser,
@@ -51,11 +60,15 @@ PARSERS: list[type[Parser]] = [
     NUnitXmlParser,
     XUnitXmlParser,
     RobotXmlParser,
+    MSTestXmlParser,
     PytestJUnitParser,
     JUnitXmlParser,
 ]
 
 FRAMEWORKS: dict[str, type[Parser]] = {
+    "ctrf": CTRFJsonParser,
+    "sarif": SARIFJsonParser,
+    "allure": AllureJsonParser,
     "playwright": PlaywrightJsonParser,
     "newman": NewmanJsonParser,
     "k6": K6JsonParser,
@@ -77,6 +90,7 @@ FRAMEWORKS: dict[str, type[Parser]] = {
     "xunit": XUnitXmlParser,
     "robot": RobotXmlParser,
     "robotframework": RobotXmlParser,
+    "mstest": MSTestXmlParser,
     "pytest": PytestJUnitParser,
     "junit": JUnitXmlParser,
     "rest-assured": JUnitXmlParser,
@@ -134,8 +148,13 @@ def parse(path: Path, framework: str = "auto") -> tuple[str, list[NormalizedFail
 
 from .registry import ParserRegistry
 
-# Register all existing parsers in detection-priority order (most specific first).
+# Register all parsers in detection-priority order (most specific first).
+# CTRF/SARIF/Allure registered first — most specific fingerprints.
 # Vitest must precede Jest — "vitestVersion" key distinguishes them.
+# MSTest registered just before JUnit fallback.
+ParserRegistry.register(CTRFJsonParser,     aliases=["ctrf"])
+ParserRegistry.register(SARIFJsonParser,    aliases=["sarif"])
+ParserRegistry.register(AllureJsonParser,   aliases=["allure"])
 ParserRegistry.register(PlaywrightJsonParser)
 ParserRegistry.register(NewmanJsonParser,   aliases=["newman"])
 ParserRegistry.register(K6JsonParser,       aliases=["k6"])
@@ -154,6 +173,7 @@ ParserRegistry.register(PHPUnitXmlParser,   aliases=["phpunit"])
 ParserRegistry.register(NUnitXmlParser,     aliases=["nunit"])
 ParserRegistry.register(XUnitXmlParser,     aliases=["xunit"])
 ParserRegistry.register(RobotXmlParser,     aliases=["robot", "robotframework"])
+ParserRegistry.register(MSTestXmlParser,    aliases=["mstest"])
 ParserRegistry.register(PytestJUnitParser,  aliases=["pytest"])
 ParserRegistry.register(JUnitXmlParser,     aliases=["junit", "rest-assured", "karate", "insomnia"])
 
@@ -161,4 +181,5 @@ __all__ = [
     "NormalizedFailure", "Parser",
     "PARSERS", "FRAMEWORKS", "detect", "parse",
     "ParserRegistry",
+    "CTRFJsonParser", "SARIFJsonParser", "AllureJsonParser", "MSTestXmlParser",
 ]

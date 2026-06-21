@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+  "version": "2.1.0",
+  "runs": [
+    {
+      "tool": {"driver": {"name": "CodeQL", "version": "2.15.0"}},
+      "results": [
+        {
+          "ruleId": "js/sql-injection",
+          "level": "error",
+          "message": {"text": "SQL query built from user-controlled sources."},
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {"uri": "src/db/queries.js"},
+                "region": {"startLine": 42}
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

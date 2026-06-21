@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TestRun id="run1" name="My Test Run" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Results>
+    <UnitTestResult testName="CreateUser_Returns201" testId="t1" outcome="Failed" duration="00:00:00.230">
+      <Output>
+        <ErrorInfo>
+          <Message>Assert.AreEqual failed. Expected:&lt;201&gt;. Actual:&lt;404&gt;.</Message>
+          <StackTrace>at UserTests.CreateUser_Returns201() in UserTests.cs:line 22</StackTrace>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult testName="GetUser_Returns200" testId="t2" outcome="Passed" duration="00:00:00.120"/>
+  </Results>
+  <TestDefinitions>
+    <UnitTest name="CreateUser_Returns201" id="t1">
+      <TestMethod className="UserTests" name="CreateUser_Returns201"/>
+    </UnitTest>
+  </TestDefinitions>
+</TestRun>

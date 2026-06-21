@@ -441,3 +441,65 @@ def test_pact_parse_returns_failures(fixtures):
     assert len(failed) == 1
     assert "create a user" in failed[0].title
     assert failed[0].framework == "pact"
+
+
+# ── SARIF ─────────────────────────────────────────────────────────────────────
+
+def test_sarif_can_parse(fixtures):
+    from analyzer.parsers.sarif_json import SARIFJsonParser
+    assert SARIFJsonParser.can_parse((fixtures / "sarif_results.json").read_bytes())
+
+
+def test_sarif_parse_returns_failures(fixtures):
+    from analyzer.parsers.sarif_json import SARIFJsonParser
+    results = SARIFJsonParser.parse(fixtures / "sarif_results.json")
+    failed = [r for r in results if r.status == "failed"]
+    assert len(failed) == 1
+    assert failed[0].framework == "sarif"
+    assert "sql" in failed[0].title.lower() or "sql" in (failed[0].error_message or "").lower()
+
+
+# ── CTRF ──────────────────────────────────────────────────────────────────────
+
+def test_ctrf_can_parse(fixtures):
+    from analyzer.parsers.ctrf_json import CTRFJsonParser
+    assert CTRFJsonParser.can_parse((fixtures / "ctrf_results.json").read_bytes())
+
+
+def test_ctrf_parse_returns_failures(fixtures):
+    from analyzer.parsers.ctrf_json import CTRFJsonParser
+    results = CTRFJsonParser.parse(fixtures / "ctrf_results.json")
+    failed = [r for r in results if r.status == "failed"]
+    assert len(failed) == 1
+    assert "POST /api/users" in failed[0].title
+    assert failed[0].framework == "ctrf"
+
+
+# ── Allure ────────────────────────────────────────────────────────────────────
+
+def test_allure_can_parse(fixtures):
+    from analyzer.parsers.allure_json import AllureJsonParser
+    assert AllureJsonParser.can_parse((fixtures / "allure_results.json").read_bytes())
+
+
+def test_allure_parse_returns_failures(fixtures):
+    from analyzer.parsers.allure_json import AllureJsonParser
+    results = AllureJsonParser.parse(fixtures / "allure_results.json")
+    failed = [r for r in results if r.status == "failed"]
+    assert len(failed) == 1
+    assert failed[0].framework == "allure"
+
+
+# ── MSTest / TRX ──────────────────────────────────────────────────────────────
+
+def test_mstest_can_parse(fixtures):
+    from analyzer.parsers.mstest_xml import MSTestXmlParser
+    assert MSTestXmlParser.can_parse((fixtures / "mstest_results.xml").read_bytes())
+
+
+def test_mstest_parse_returns_failures(fixtures):
+    from analyzer.parsers.mstest_xml import MSTestXmlParser
+    results = MSTestXmlParser.parse(fixtures / "mstest_results.xml")
+    failed = [r for r in results if r.status == "failed"]
+    assert len(failed) == 1
+    assert failed[0].framework == "mstest"

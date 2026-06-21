@@ -1,0 +1,19 @@
+{
+  "results": {
+    "tool": {"name": "jest", "version": "29.0.0"},
+    "summary": {"tests": 3, "passed": 2, "failed": 1, "skipped": 0, "start": 1705312800000, "stop": 1705312801234},
+    "tests": [
+      {
+        "name": "POST /api/users returns 201",
+        "status": "failed",
+        "duration": 320,
+        "message": "Expected status 201 but got 404",
+        "trace": "Error: Expected 201\n    at test/api.test.js:15:5",
+        "filePath": "test/api.test.js",
+        "suite": "API Tests"
+      },
+      {"name": "GET /api/users returns 200", "status": "passed", "duration": 120},
+      {"name": "DELETE /api/users/:id returns 204", "status": "passed", "duration": 85}
+    ]
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "testCaseId": "tc001",
+  "historyId": "h001",
+  "labels": [
+    {"name": "suite", "value": "API Tests"},
+    {"name": "feature", "value": "User Management"}
+  ],
+  "name": "POST /api/users should return 201",
+  "status": "failed",
+  "statusDetails": {
+    "message": "Expected: 201, Actual: 404",
+    "trace": "AssertionError at UserApiTest.java:45"
+  },
+  "stage": "finished",
+  "start": 1705312800000,
+  "stop": 1705312800320,
+  "fullName": "com.example.UserApiTest#createUser"
+}
