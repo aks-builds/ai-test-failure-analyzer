@@ -130,12 +130,13 @@ docker run --rm -v $(pwd):/workspace \
 ```bash
 ai-analyze analyze results.json
 ai-analyze analyze results.json --mode api-only    # force API-only (no source scan)
-ai-analyze analyze results.json --out report.md    # write report to file
+ai-analyze analyze results.json --out report.md    # write Markdown report to file
+ai-analyze analyze results.json --format json --out report.json   # JSON output
+ai-analyze analyze results.json --format ctrf --out report.ctrf.json  # CTRF output
 ai-analyze analyze results.json --create-issue     # file GitHub issue for top hypothesis
-ai-analyze analyze results.json --format ctrf      # output CTRF JSON instead of Markdown
 ai-analyze analyze results.json --enrich           # add AI root-cause annotations
 ai-analyze analyze results.json --no-cache         # bypass result cache
-ai-analyze analyze results.json --watch            # re-analyze on file change
+ai-analyze watch results.json                      # re-analyze on every file change
 ```
 
 ### CTRF output

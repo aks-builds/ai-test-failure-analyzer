@@ -52,7 +52,7 @@ analyzer-tui = "analyzer.ui.tui:run"
 analyzer-web = "analyzer.ui.web.app:run"
 
 [project.urls]
-Homepage = "https://github.com/nashtech/ai-test-failure-analyzer"
+Homepage = "https://github.com/aks-builds/ai-test-failure-analyzer"
 
 [tool.setuptools.packages.find]
 include = ["analyzer*"]

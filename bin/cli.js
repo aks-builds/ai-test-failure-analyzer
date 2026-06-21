@@ -19,7 +19,7 @@ const SKILL_DIR = path.join(ROOT, "skills", "ai-test-failure-analyzer");
 const VERSION   = require(path.join(ROOT, "package.json")).version;
 const HOME      = os.homedir();
 
-const PASSTHROUGH = ["analyze", "serve-stdio", "serve-http", "preflight", "info", "tui", "web"];
+const PASSTHROUGH = ["analyze", "watch", "serve-stdio", "serve-http", "preflight", "info", "tui", "web"];
 
 const AGENTS = {
   claude:   { base: path.join(HOME, ".claude"),               kind: "dir",    dest: path.join(HOME, ".claude",  "skills", "ai-test-failure-analyzer") },
@@ -119,15 +119,23 @@ Usage:
   ai-analyze <command> [args...]
 
 Commands (require Python 3.10+):
-  analyze       Run full 8-phase analysis on a test results file
+  analyze       Run full 10-phase analysis on a test results file
+  watch         Re-analyze on every file change (2s polling, Ctrl-C to stop)
   serve-stdio   Start MCP server over stdio (Claude Code / Cursor)
   serve-http    Start MCP server over HTTP (OpenAI / Gemini)
+  tui           Launch the interactive Textual TUI
+  web           Launch the FastAPI web dashboard
   info          Show version + supported frameworks
 
 Examples:
   ai-analyze install
   ai-analyze analyze playwright-report.json
   ai-analyze analyze results.json --mode api-only
+  ai-analyze analyze results.json --format json --out report.json
+  ai-analyze analyze results.json --format ctrf --out report.ctrf.json
+  ai-analyze analyze results.json --no-cache --non-interactive
+  ai-analyze analyze results.json --enrich
+  ai-analyze watch results.json
   ai-analyze serve-stdio
 `);
 }
