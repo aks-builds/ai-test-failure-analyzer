@@ -43,17 +43,17 @@ def score_cluster(
     # Tier-1 count: nodes with weight >= 2.0
     tier1_count = sum(1 for n in linked_nodes if n.weight >= 2.0)
 
-    # Flaky penalty: -8 per probable flake (flakiness_score >= 0.5), max -20
+    # Flaky penalty: flat -10 if ANY failure in cluster has flakiness_score >= 0.5
     cluster_failures = [f for f in failures if f.id in fid_set]
-    flaky_count = sum(1 for f in cluster_failures if (f.flakiness_score or 0.0) >= 0.5)
-    flaky_penalty = min(flaky_count * 8, 20)
+    flaky_penalty = 10 if any(
+        f.flakiness_score is not None and f.flakiness_score >= 0.5
+        for f in cluster_failures
+    ) else 0
 
-    # Contradiction penalty: -15 per contradicting edge
-    contradiction_count = sum(
-        1 for e in graph.edges
-        if e.src in fid_set and e.relation == "contradicts"
-    )
-    contradiction_penalty = contradiction_count * 15
+    # Contradiction penalty: -15 if tier1 nodes exist in graph but none are linked to cluster
+    tier1_nodes_in_graph = [n for n in graph.nodes.values() if n.weight >= 2.0]
+    tier1_linked_to_cluster = [n for n in linked_nodes if n.weight >= 2.0]
+    contradiction_penalty = 15 if (tier1_nodes_in_graph and not tier1_linked_to_cluster) else 0
 
     raw = int(raw_weight * 15) + corroboration - flaky_penalty - contradiction_penalty
 
@@ -72,10 +72,10 @@ def score_cluster(
         parts.append(f"evidence: {'+'.join(sorted(source_types))}")
     if tier1_count:
         parts.append(f"{tier1_count} Tier-1 source(s)")
-    if flaky_count:
-        parts.append(f"{flaky_count} probable flake(s) penalised")
-    if contradiction_count:
-        parts.append(f"{contradiction_count} contradiction(s) penalised")
+    if flaky_penalty:
+        parts.append("probable flake(s) penalised")
+    if contradiction_penalty:
+        parts.append("contradiction penalised (orphan Tier-1 node)")
     justification = " · ".join(parts) if parts else "test output only"
 
     return score, justification

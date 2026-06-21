@@ -276,8 +276,8 @@ def test_clusterer_empty_input():
 
 # ── Scorer ────────────────────────────────────────────────────────────────────
 
-def test_scorer_single_source_capped_at_55():
-    """With only test output (no Tier-1 evidence), score must be ≤ 55."""
+def test_scorer_no_evidence_returns_10():
+    """Empty graph: raw=0, no caps bite below 55, score clamps to floor of 10."""
     from analyzer.intelligence.scorer import score_cluster
     from analyzer.evidence.graph import EvidenceGraph
     from analyzer.parsers.base import NormalizedFailure, make_failure_id
@@ -285,12 +285,14 @@ def test_scorer_single_source_capped_at_55():
     f = NormalizedFailure(id=fid, framework="pytest", suite="s", title="t", file="f.py",
                           status="failed")
     score, justification = score_cluster("C1", [fid], EvidenceGraph(), [f])
-    assert score <= 55
+    # raw_weight=0, corroboration=0, flaky=0, contradiction=0 → raw=0
+    # tier1_count==0, no source_types → cap at 55 → min(0,55)=0 → max(10,0)=10
+    assert score == 10
     assert isinstance(justification, str)
 
 
-def test_scorer_tier1_evidence_increases_score():
-    """Adding a Tier-1 commit node must increase score above single-source cap."""
+def test_scorer_tier1_evidence_returns_70():
+    """Two Tier-1 nodes (commit + log_line) each at weight=2.0 must produce score=70."""
     from analyzer.intelligence.scorer import score_cluster
     from analyzer.evidence.graph import EvidenceGraph, EvidenceNode, EvidenceEdge
     from analyzer.parsers.base import NormalizedFailure, make_failure_id
@@ -304,38 +306,75 @@ def test_scorer_tier1_evidence_increases_score():
     g.add_edge(EvidenceEdge(src=fid, dst="commit:abc", relation="caused_by", weight=2.0))
     g.add_edge(EvidenceEdge(src=fid, dst="log:0", relation="related_to", weight=2.0))
     score, _ = score_cluster("C1", [fid], g, [f])
-    assert score > 55
+    # raw_weight=4.0, int(60)=60, corroboration=min(2*5,20)=10, flaky=0, contradiction=0
+    # raw=70, tier1 present → no cap → max(10, min(98, 70))=70
+    assert score == 70
 
 
-def test_scorer_flaky_test_penalises_score():
-    """A probable flake must reduce confidence."""
+def test_scorer_flaky_penalty_reduces_score_to_60():
+    """Flat -10 flaky penalty on the two-Tier-1 setup must give score=60."""
     from analyzer.intelligence.scorer import score_cluster
     from analyzer.evidence.graph import EvidenceGraph, EvidenceNode, EvidenceEdge
     from analyzer.parsers.base import NormalizedFailure, make_failure_id
     fid = make_failure_id("pytest", "s", "t", "f.py")
-    f_normal = NormalizedFailure(id=fid, framework="pytest", suite="s", title="t",
-                                 file="f.py", status="failed", flakiness_score=0.0)
-    f_flaky  = NormalizedFailure(id=fid, framework="pytest", suite="s", title="t",
-                                 file="f.py", status="failed", flakiness_score=0.9)
+    f_flaky = NormalizedFailure(id=fid, framework="pytest", suite="s", title="t",
+                                file="f.py", status="failed", flakiness_score=0.7)
     g = EvidenceGraph()
     g.add_node(EvidenceNode(id=fid, type="failure", ref="f.py", weight=0.0, excerpt=""))
-    g.add_node(EvidenceNode(id="commit:abc", type="commit", ref="abc", weight=2.0, excerpt=""))
+    g.add_node(EvidenceNode(id="commit:abc", type="commit", ref="abc", weight=2.0, excerpt="rename"))
+    g.add_node(EvidenceNode(id="log:0", type="log_line", ref="app.log:42", weight=2.0, excerpt="ERROR"))
     g.add_edge(EvidenceEdge(src=fid, dst="commit:abc", relation="caused_by", weight=2.0))
-    score_normal, _ = score_cluster("C1", [fid], g, [f_normal])
-    score_flaky, _  = score_cluster("C1", [fid], g, [f_flaky])
-    assert score_flaky < score_normal
+    g.add_edge(EvidenceEdge(src=fid, dst="log:0", relation="related_to", weight=2.0))
+    score, _ = score_cluster("C1", [fid], g, [f_flaky])
+    # Same as tier1 test but flakiness_score=0.7 → flaky_penalty=10
+    # raw=60+10-10-0=60, tier1 present → no cap → max(10, min(98, 60))=60
+    assert score == 60
 
 
-def test_scorer_score_always_in_valid_range():
-    """Score must always be between 10 and 98 inclusive."""
+def test_scorer_no_tier1_capped_at_40():
+    """Four Tier-2 nodes across 3 source types: raw=75 gets capped to 40 by no-tier1 rule."""
     from analyzer.intelligence.scorer import score_cluster
-    from analyzer.evidence.graph import EvidenceGraph
+    from analyzer.evidence.graph import EvidenceGraph, EvidenceNode, EvidenceEdge
     from analyzer.parsers.base import NormalizedFailure, make_failure_id
     fid = make_failure_id("pytest", "s", "t", "f.py")
-    f = NormalizedFailure(id=fid, framework="pytest", suite="s", title="t",
-                          file="f.py", status="failed", flakiness_score=1.0)
-    score, _ = score_cluster("C1", [fid], EvidenceGraph(), [f])
-    assert 10 <= score <= 98
+    f = NormalizedFailure(id=fid, framework="pytest", suite="s", title="t", file="f.py",
+                          status="failed")
+    g = EvidenceGraph()
+    g.add_node(EvidenceNode(id=fid, type="failure", ref="f.py", weight=0.0, excerpt=""))
+    # 4 Tier-2 nodes (weight=1.0) across 3 distinct source types
+    g.add_node(EvidenceNode(id="log:0", type="log_line", ref="app.log:1", weight=1.0, excerpt=""))
+    g.add_node(EvidenceNode(id="log:1", type="log_line", ref="app.log:2", weight=1.0, excerpt=""))
+    g.add_node(EvidenceNode(id="dep:0", type="dep_change", ref="pkg.json", weight=1.0, excerpt=""))
+    g.add_node(EvidenceNode(id="cfg:0", type="config", ref="app.cfg", weight=1.0, excerpt=""))
+    g.add_edge(EvidenceEdge(src=fid, dst="log:0", relation="related_to", weight=1.0))
+    g.add_edge(EvidenceEdge(src=fid, dst="log:1", relation="related_to", weight=1.0))
+    g.add_edge(EvidenceEdge(src=fid, dst="dep:0", relation="related_to", weight=1.0))
+    g.add_edge(EvidenceEdge(src=fid, dst="cfg:0", relation="related_to", weight=1.0))
+    score, _ = score_cluster("C1", [fid], g, [f])
+    # raw_weight=4.0, int(60)=60, corroboration=min(3*5,20)=15, flaky=0, contradiction=0
+    # raw=75, tier1_count==0 and source_types present → cap at 40 → min(75,40)=40
+    # max(10, min(98, 40))=40
+    assert score == 40
+
+
+def test_scorer_contradiction_penalty():
+    """Orphan Tier-1 node (in graph but not linked to cluster) fires -15 penalty."""
+    from analyzer.intelligence.scorer import score_cluster
+    from analyzer.evidence.graph import EvidenceGraph, EvidenceNode
+    from analyzer.parsers.base import NormalizedFailure, make_failure_id
+    fid = make_failure_id("pytest", "s", "t", "f.py")
+    f = NormalizedFailure(id=fid, framework="pytest", suite="s", title="t", file="f.py",
+                          status="failed")
+    g = EvidenceGraph()
+    # Tier-1 node exists in graph but has NO edge from the cluster failure
+    g.add_node(EvidenceNode(id="commit:abc", type="commit", ref="abc", weight=2.0, excerpt=""))
+    score, justification = score_cluster("C1", [fid], g, [f])
+    # raw_weight=0, corroboration=0, flaky=0
+    # tier1_nodes_in_graph=[commit:abc], tier1_linked_to_cluster=[] → contradiction_penalty=15
+    # raw=0+0-0-15=-15, tier1_count==0 and no source_types → cap at 55 → min(-15,55)=-15
+    # max(10, min(98, -15))=10
+    assert score == 10
+    assert "contradiction" in justification
 
 
 def test_clusterer_silhouette_fallback():
