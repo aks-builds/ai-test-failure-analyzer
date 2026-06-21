@@ -93,20 +93,7 @@ def analyze(
             except Exception:
                 pass
 
-    # ── Phase 0: Workspace scan ────────────────────────────────────────────────
-    emit({"phase": 0, "name": "Scan workspace", "status": "started"})
-    profile = scan_workspace(workspace, force_api_only=(mode == "api-only"))
-    emit({
-        "phase": 0, "name": "Scan workspace", "status": "completed",
-        "data": {
-            "mode": profile.mode,
-            "source_roots": [str(p) for p in profile.source_roots],
-            "noise_dirs": len(profile.noise_paths),
-        },
-    })
-
-    # ── Phase 1: Collect failures ──────────────────────────────────────────
-    emit({"phase": 1, "name": "Collect failures", "status": "started"})
+    # ── Path validation (cheap — resolve before cache check) ──────────────────
     # Inline realpath+join+startswith — the pattern CodeQL's CWE-022 sanitiser
     # recognises. Using os.path functions (strings) keeps the taint chain clean.
     _root = str(workspace)
@@ -123,7 +110,7 @@ def analyze(
         raise FileNotFoundError("Test results file not found.")
     safe_results_path = Path(_joined)
 
-    # ── Cache check ───────────────────────────────────────────────────────────
+    # ── Cache check (before Phase 0 so workspace scan is skipped on hit) ─────
     from .cache import CacheKey, load_cached, save_cache
     cache_key = CacheKey.compute(workspace, safe_results_path)
     if not no_cache:
@@ -131,6 +118,21 @@ def analyze(
         if cached is not None:
             emit({"phase": "cache", "name": "Cache hit", "status": "completed"})
             return cached
+
+    # ── Phase 0: Workspace scan ────────────────────────────────────────────────
+    emit({"phase": 0, "name": "Scan workspace", "status": "started"})
+    profile = scan_workspace(workspace, force_api_only=(mode == "api-only"))
+    emit({
+        "phase": 0, "name": "Scan workspace", "status": "completed",
+        "data": {
+            "mode": profile.mode,
+            "source_roots": [str(p) for p in profile.source_roots],
+            "noise_dirs": len(profile.noise_paths),
+        },
+    })
+
+    # ── Phase 1: Collect failures ──────────────────────────────────────────
+    emit({"phase": 1, "name": "Collect failures", "status": "started"})
 
     if framework == "auto":
         detected = detect(safe_results_path)

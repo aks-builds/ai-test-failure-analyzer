@@ -14,7 +14,7 @@ _EXPIRY_SECONDS = 86400  # 24 hours
 class CacheKey:
     @staticmethod
     def compute(workspace: Path, results_path: Path) -> str:
-        """SHA1 of: git HEAD (if exists) + results file mtime + results file size."""
+        """SHA1 of: git HEAD (if exists) + results file mtime + results file size + SHA1 of file contents."""
         parts: list[str] = []
         git_head = workspace / ".git" / "HEAD"
         if git_head.exists():
@@ -78,6 +78,8 @@ def load_cached(workspace: Path, key: str):
             report_markdown=data.get("report_markdown", ""),
             elapsed_seconds=data.get("elapsed_seconds", 0),
             profile=profile,
+            suppressed_hypotheses=data.get("suppressed_hypotheses", 0),
+            no_app_fault=data.get("no_app_fault", False),
             phase_timings=data.get("phase_timings", {}),
         )
     except Exception:
@@ -98,6 +100,8 @@ def save_cache(workspace: Path, key: str, result) -> None:
             "clusters": result.clusters,
             "report_markdown": result.report_markdown,
             "elapsed_seconds": result.elapsed_seconds,
+            "suppressed_hypotheses": result.suppressed_hypotheses,
+            "no_app_fault": result.no_app_fault,
             "phase_timings": getattr(result, "phase_timings", {}),
             "profile": dataclasses.asdict(result.profile) if result.profile else {},
         }
