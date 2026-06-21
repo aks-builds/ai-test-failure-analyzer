@@ -96,6 +96,13 @@ analyzer analyze playwright-report.json
 ai-analyze install
 ```
 
+**Docker:**
+```bash
+docker run --rm -v $(pwd):/workspace \
+  ghcr.io/aks-builds/ai-test-failure-analyzer \
+  analyze /workspace/results.json
+```
+
 ## Usage
 
 ### CLI
