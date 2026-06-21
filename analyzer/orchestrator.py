@@ -130,6 +130,16 @@ def analyze(
         raise FileNotFoundError("Test results file not found.")
     safe_results_path = Path(_joined)
 
+    # ── Framework validation ──────────────────────────────────────────────────
+    if framework != "auto":
+        from .parsers import FRAMEWORKS
+        valid_frameworks = {"auto"} | set(FRAMEWORKS.keys())
+        if framework not in valid_frameworks:
+            raise ValueError(
+                f"Unknown framework: '{framework}'\n"
+                f"Supported: {', '.join(sorted(valid_frameworks))}"
+            )
+
     # ── Results file validation ───────────────────────────────────────────────
     _raw = safe_results_path.read_bytes()
     if not _raw.strip():

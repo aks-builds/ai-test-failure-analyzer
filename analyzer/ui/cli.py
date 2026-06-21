@@ -28,8 +28,62 @@ from ..elicit import get as get_question
 from ..github_integration import create_issue_from_hypothesis, detect_default_repo
 from ..orchestrator import analyze
 from ..render.ansi import render_ansi_report
+from ..security import SecurityError
 
 PHASE_ICONS = {1: "📥", 2: "📖", "2.5": "🔍", 3: "🔀", 4: "📋", 5: "⚙️", "5.5": "🔬", 6: "🔗", 7: "🧠", 8: "📝"}
+
+_VALID_FORMATS = {"markdown", "json", "ctrf"}
+_VALID_MODES = {"auto", "api-only"}
+
+
+def _validate_inputs(
+    results_path: str,
+    workspace: Optional[str],
+    framework: str,
+    mode: str,
+    repo: Optional[str],
+    out: Optional[str],
+    format: str,
+    console: Console,
+) -> "int | None":
+    """Validate all CLI inputs before calling analyze(). Returns 2 on failure, None on success."""
+    if format not in _VALID_FORMATS:
+        console.print(f"\n[red]✗[/red] Invalid --format {format!r}")
+        console.print(f"  Supported values: {', '.join(sorted(_VALID_FORMATS))}")
+        return 2
+
+    if mode not in _VALID_MODES:
+        console.print(f"\n[red]✗[/red] Invalid --mode {mode!r}")
+        console.print(f"  Supported values: {', '.join(sorted(_VALID_MODES))}")
+        return 2
+
+    if workspace is not None:
+        ws_path = Path(workspace)
+        if not ws_path.exists() or not ws_path.is_dir():
+            console.print(f"\n[red]✗[/red] Workspace directory not found: {workspace}")
+            console.print(
+                "  Pass --workspace pointing to your repository root, "
+                "or omit it to use the current directory."
+            )
+            return 2
+
+    if out is not None:
+        out_parent = Path(out).resolve().parent
+        if not out_parent.exists():
+            console.print(f"\n[red]✗[/red] Output directory does not exist: {out_parent}")
+            console.print(
+                "  Create the directory first, or use a path in an existing directory."
+            )
+            return 2
+
+    if repo is not None:
+        parts = repo.split("/")
+        if not (len(parts) == 2 and all(parts)):
+            console.print(f"\n[red]✗[/red] Invalid --repo format: {repo!r}")
+            console.print("  Expected: owner/repo  (e.g. acme-corp/my-api-service)")
+            return 2
+
+    return None
 
 
 def _ask_cli(qid: str) -> str:
@@ -57,6 +111,19 @@ def run(
     """Run the CLI analysis flow. Returns exit code (0 = success)."""
     console = Console()
     ws = Path(workspace or Path.cwd()).resolve()
+
+    _err = _validate_inputs(
+        results_path=results_path,
+        workspace=workspace,
+        framework=framework,
+        mode=mode,
+        repo=repo,
+        out=out,
+        format=format,
+        console=console,
+    )
+    if _err is not None:
+        return _err
 
     console.print()
     console.rule("[bold cyan]🤖 QA Test Failure Analyzer", style="cyan")
@@ -103,6 +170,10 @@ def run(
         console.print(f"\n[red]✗ Validation error[/red]")
         for line in str(e).splitlines():
             console.print(f"  {line}")
+        return 2
+    except SecurityError as e:
+        console.print(f"\n[red]✗ Security error[/red]  {e}")
+        console.print("[dim]Results file path must be inside the workspace directory.[/dim]")
         return 2
     except Exception as e:
         console.print(f"\n[red]✗[/red] Analysis failed: {e}")
