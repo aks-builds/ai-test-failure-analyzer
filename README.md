@@ -21,9 +21,9 @@ No guesses. No fixture noise. No repeating the obvious.
 [![MCP server](https://img.shields.io/badge/MCP-server-7c3aed)](https://modelcontextprotocol.io)
 [![Agent Skill](https://img.shields.io/badge/Agent-Skill-7c3aed)](skills/ai-test-failure-analyzer/SKILL.md)
 
-<!-- HERO-START -->
-![ai-analyze running 10-phase analysis](.github/media/hero.svg)
-<!-- HERO-END -->
+<!-- cliproof:start id=hero -->
+![ai-analyze running 10-phase root-cause analysis](.github/media/hero.svg)
+<!-- cliproof:end id=hero -->
 
 🩻 A real analysis — evidence from `git`, `app.log`, and `.env` — no guesses, no fixture noise.
 
