@@ -150,14 +150,27 @@ def analyze(
     _suffix = safe_results_path.suffix.lower()
     if _suffix == ".json":
         import json as _json
+        _first_parse_exc = None
         try:
             _json.loads(_raw)
         except _json.JSONDecodeError as exc:
-            raise ValueError(
-                f"Results file contains invalid JSON: {safe_results_path}\n"
-                f"  {exc}\n"
-                "Check that your test runner finished successfully and the file is complete."
-            ) from exc
+            _first_parse_exc = exc
+        if _first_parse_exc is not None:
+            # Accept NDJSON (one JSON object per line) — used by `go test -json`.
+            _lines = [l for l in _raw.decode("utf-8", errors="replace").splitlines() if l.strip()]
+            _ndjson_ok = bool(_lines)
+            for _l in _lines[:10]:
+                try:
+                    _json.loads(_l)
+                except _json.JSONDecodeError:
+                    _ndjson_ok = False
+                    break
+            if not _ndjson_ok:
+                raise ValueError(
+                    f"Results file contains invalid JSON: {safe_results_path}\n"
+                    f"  {_first_parse_exc}\n"
+                    "Check that your test runner finished successfully and the file is complete."
+                ) from _first_parse_exc
     elif _suffix in (".xml", ".trx"):
         _text_start = _raw[:200].lstrip()
         if not (_text_start.startswith(b"<") or _text_start.startswith(b"\xef\xbb\xbf<")):
