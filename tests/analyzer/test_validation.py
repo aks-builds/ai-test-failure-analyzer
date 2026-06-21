@@ -4,8 +4,9 @@ from __future__ import annotations
 
 import subprocess
 import sys
+from pathlib import Path
 
-CWD = "C:/NashTech/ai-test-failure-analyzer"
+REPO_ROOT = Path(__file__).resolve().parents[2]
 FIXTURE = "tests/analyzer/fixtures/playwright_results.json"
 
 
@@ -14,7 +15,7 @@ def run_cli(*args: str) -> subprocess.CompletedProcess:
         [sys.executable, "-m", "analyzer", "analyze", *args],
         capture_output=True,
         text=True,
-        cwd=CWD,
+        cwd=str(REPO_ROOT),
     )
 
 
