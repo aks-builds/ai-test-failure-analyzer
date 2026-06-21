@@ -3,19 +3,11 @@ from __future__ import annotations
 import os
 import json
 import urllib.request
-import urllib.error
 from pathlib import Path
 
 from ..bundle import EvidenceBundle
 from ..collector import EvidenceCollector
 from ..graph import EvidenceNode
-
-_CI_VARS = {
-    "github": "GITHUB_ACTIONS",
-    "gitlab": "GITLAB_CI",
-    "circleci": "CIRCLECI",
-    "jenkins": "JENKINS_URL",
-}
 
 
 def _detect_provider() -> str | None:

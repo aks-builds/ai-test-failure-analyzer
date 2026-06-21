@@ -10,6 +10,7 @@ from ..graph import EvidenceNode
 
 _SPEC_GLOBS = ["openapi.yaml", "openapi.json", "swagger.yaml", "swagger.json"]
 _PACT_DIRS = ["pact", "pacts"]
+_EXTRA_GLOBS = ["*-schema.json", "*.oas.json", "*.pact.json"]
 
 
 def _find_spec_files(workspace: Path) -> list[Path]:
@@ -20,6 +21,8 @@ def _find_spec_files(workspace: Path) -> list[Path]:
         pact_dir = workspace / d
         if pact_dir.is_dir():
             found.extend(pact_dir.rglob("*.json"))
+    for pattern in _EXTRA_GLOBS:
+        found.extend(workspace.rglob(pattern))
     return found[:10]  # cap to avoid scanning huge repos
 
 
