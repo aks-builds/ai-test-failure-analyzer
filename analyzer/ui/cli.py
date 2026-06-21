@@ -46,6 +46,7 @@ def run(
     out: Optional[str] = None,
     format: str = "markdown",
     no_cache: bool = False,
+    enrich: bool = False,
 ) -> int:
     """Run the CLI analysis flow. Returns exit code (0 = success)."""
     console = Console()
@@ -107,6 +108,17 @@ def run(
         logs=result.logs,
         config=result.config,
     )
+
+    # Optional LLM enrichment
+    if enrich:
+        from ..enricher import enrich as _enrich, EnrichConfig
+        try:
+            enrich_config = EnrichConfig.from_env()
+            enrichment = _enrich(result, enrich_config)
+            if enrichment:
+                result.report_markdown += "\n\n" + enrichment
+        except ValueError as e:
+            print(f"  {e}", file=sys.stderr)
 
     # Optional output file / format handling
     if format == "ctrf" or (out and out.endswith(".ctrf.json")):

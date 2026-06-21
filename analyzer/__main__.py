@@ -51,6 +51,8 @@ def cmd_analyze(
     out: Optional[str] = typer.Option(None, "--out", "-o", help="Write Markdown report to this path"),
     format: str = typer.Option("markdown", "--format", help="markdown|json|ctrf"),
     no_cache: bool = typer.Option(False, "--no-cache", help="Skip reading and writing the analysis cache"),
+    enrich: bool = typer.Option(False, "--enrich", help="Send top hypothesis to configured LLM for natural-language explanation "
+                                "(requires ATFA_LLM_KEY or OPENAI_API_KEY)"),
 ) -> None:
     """Run the full eight-phase analysis (default subcommand)."""
     from .ui.cli import run
@@ -66,6 +68,7 @@ def cmd_analyze(
         out=out,
         format=format,
         no_cache=no_cache,
+        enrich=enrich,
     )
     raise typer.Exit(code=code)
 
