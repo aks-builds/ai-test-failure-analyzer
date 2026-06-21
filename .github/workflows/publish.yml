@@ -9,6 +9,12 @@ on:
   pull_request:
     types: [closed]
     branches: [master]
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Branch or SHA to publish from"
+        required: false
+        default: master
 
 permissions:
   contents: write
@@ -16,7 +22,10 @@ permissions:
 
 jobs:
   publish-npm:
-    if: github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'release/')
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.pull_request.merged == true &&
+       startsWith(github.event.pull_request.head.ref, 'release/'))
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.ver.outputs.version }}
@@ -26,7 +35,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: master
+          ref: ${{ github.event.inputs.ref || 'master' }}
           fetch-depth: 0
 
       - uses: actions/setup-node@v4
@@ -72,7 +81,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: master
+          ref: ${{ github.event.inputs.ref || 'master' }}
 
       - uses: actions/setup-python@v5
         with:
@@ -96,7 +105,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: master
+          ref: ${{ github.event.inputs.ref || 'master' }}
           fetch-depth: 0
 
       - name: Configure git identity
