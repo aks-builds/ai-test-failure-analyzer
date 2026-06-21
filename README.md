@@ -33,12 +33,6 @@ No guesses. No fixture noise. No repeating the obvious.
 
 ## Screenshots
 
-### Report
-
-<!-- cliproof:start id=report -->
-![ai-analyze markdown report — triage table, confidence scores and hypothesis cards](.github/media/report.png)
-<!-- cliproof:end id=report -->
-
 ### TUI
 
 <!-- cliproof:start id=tui -->
