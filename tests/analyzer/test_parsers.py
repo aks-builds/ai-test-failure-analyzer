@@ -459,6 +459,15 @@ def test_sarif_parse_returns_failures(fixtures):
     assert "sql" in failed[0].title.lower() or "sql" in (failed[0].error_message or "").lower()
 
 
+def test_sarif_note_results_excluded(fixtures):
+    from analyzer.parsers.sarif_json import SARIFJsonParser
+    results = SARIFJsonParser.parse(fixtures / "sarif_results.json")
+    # The fixture has 1 error-level and 1 note-level result; only the error must be returned
+    assert len(results) == 1
+    rule_ids = [r.title.split(":")[0] for r in results]
+    assert "js/unused-local-variable" not in rule_ids
+
+
 # ── CTRF ──────────────────────────────────────────────────────────────────────
 
 def test_ctrf_can_parse(fixtures):
@@ -473,6 +482,7 @@ def test_ctrf_parse_returns_failures(fixtures):
     assert len(failed) == 1
     assert "POST /api/users" in failed[0].title
     assert failed[0].framework == "ctrf"
+    assert failed[0].ctrf_extra.get("browser") == "chromium"
 
 
 # ── Allure ────────────────────────────────────────────────────────────────────
@@ -486,8 +496,16 @@ def test_allure_parse_returns_failures(fixtures):
     from analyzer.parsers.allure_json import AllureJsonParser
     results = AllureJsonParser.parse(fixtures / "allure_results.json")
     failed = [r for r in results if r.status == "failed"]
-    assert len(failed) == 1
-    assert failed[0].framework == "allure"
+    assert len(failed) == 2
+    assert all(f.framework == "allure" for f in failed)
+
+
+def test_allure_broken_maps_to_failed(fixtures):
+    from analyzer.parsers.allure_json import AllureJsonParser
+    results = AllureJsonParser.parse(fixtures / "allure_results.json")
+    broken_results = [r for r in results if "deleteUser" in r.id or "broken" in (r.error_message or "").lower() or "NullPointer" in (r.error_message or "")]
+    assert len(broken_results) == 1
+    assert broken_results[0].status == "failed"
 
 
 # ── MSTest / TRX ──────────────────────────────────────────────────────────────

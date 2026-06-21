@@ -24,7 +24,9 @@ class SARIFJsonParser(Parser):
             tool_name = tool.get("name", "sarif")
             for result in run.get("results", []):
                 level = result.get("level", "warning")
-                status = "failed" if level in ("error", "warning") else "passed"
+                if level not in ("error", "warning"):
+                    continue
+                status = "failed"
                 rule_id = result.get("ruleId", "unknown")
                 msg = (result.get("message") or {}).get("text", "")
                 title = f"{rule_id}: {msg}" if msg else rule_id

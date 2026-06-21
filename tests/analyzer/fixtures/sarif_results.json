@@ -17,6 +17,19 @@
               }
             }
           ]
+        },
+        {
+          "ruleId": "js/unused-local-variable",
+          "level": "note",
+          "message": {"text": "Variable 'tmp' is declared but never used."},
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {"uri": "src/utils/helpers.js"},
+                "region": {"startLine": 17}
+              }
+            }
+          ]
         }
       ]
     }

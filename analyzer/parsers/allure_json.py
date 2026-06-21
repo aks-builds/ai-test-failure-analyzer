@@ -23,8 +23,8 @@ class AllureJsonParser(Parser):
         results: list[NormalizedFailure] = []
         for item in items:
             raw_status = item.get("status", "unknown")
-            status = "failed" if raw_status == "failed" else (
-                "skipped" if raw_status in ("skipped", "broken") else "passed"
+            status = "failed" if raw_status in ("failed", "broken") else (
+                "skipped" if raw_status == "skipped" else "passed"
             )
             title = item.get("name") or item.get("fullName", "")
             suite = next(

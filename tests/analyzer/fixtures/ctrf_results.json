@@ -10,7 +10,8 @@
         "message": "Expected status 201 but got 404",
         "trace": "Error: Expected 201\n    at test/api.test.js:15:5",
         "filePath": "test/api.test.js",
-        "suite": "API Tests"
+        "suite": "API Tests",
+        "browser": "chromium"
       },
       {"name": "GET /api/users returns 200", "status": "passed", "duration": 120},
       {"name": "DELETE /api/users/:id returns 204", "status": "passed", "duration": 85}
