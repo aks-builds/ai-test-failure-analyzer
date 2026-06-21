@@ -49,7 +49,7 @@ def cmd_analyze(
     create_issue: bool = typer.Option(False, "--create-issue", help="Create GitHub issue for top hypothesis"),
     repo: Optional[str] = typer.Option(None, "--repo", help="owner/repo for issue creation"),
     out: Optional[str] = typer.Option(None, "--out", "-o", help="Write Markdown report to this path"),
-    format: str = typer.Option("markdown", "--format", help="markdown|json"),
+    format: str = typer.Option("markdown", "--format", help="markdown|json|ctrf"),
 ) -> None:
     """Run the full eight-phase analysis (default subcommand)."""
     from .ui.cli import run

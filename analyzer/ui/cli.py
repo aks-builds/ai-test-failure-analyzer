@@ -106,8 +106,17 @@ def run(
         config=result.config,
     )
 
-    # Optional output file
-    if out:
+    # Optional output file / format handling
+    if format == "ctrf" or (out and out.endswith(".ctrf.json")):
+        from ..render.ctrf import render_ctrf_report
+        output = render_ctrf_report(result)
+        if out:
+            out_path = ws / out if not Path(out).is_absolute() else Path(out)
+            out_path.write_text(output, encoding="utf-8")
+            console.print(f"[green]✓[/green] CTRF report written to [bold]{out_path}[/bold]")
+        else:
+            print(output)
+    elif out:
         out_path = ws / out if not Path(out).is_absolute() else Path(out)
         out_path.write_text(result.report_markdown, encoding="utf-8")
         console.print(f"[green]✓[/green] Report written to [bold]{out_path}[/bold]")
