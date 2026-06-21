@@ -153,3 +153,49 @@ def test_flaky_detector_history_increases_score():
     }
     detect_flaky([failure], history=history)
     assert (failure.flakiness_score or 0) > 0
+
+    # 50% intermittency (5 fail / 5 pass) should score higher than 10% (1 fail / 9 pass)
+    fid_50 = make_failure_id("pytest", "suite", "test_50pct", "test.py")
+    fid_10 = make_failure_id("pytest", "suite", "test_10pct", "test.py")
+    failure_50 = NormalizedFailure(
+        id=fid_50, framework="pytest", suite="suite",
+        title="test_50pct", file="test.py", status="failed",
+    )
+    failure_10 = NormalizedFailure(
+        id=fid_10, framework="pytest", suite="suite",
+        title="test_10pct", file="test.py", status="failed",
+    )
+    history_50 = {
+        "runs": (
+            [{"run_id": f"r{i}", "failures": [{"id": fid_50, "status": "failed"}]} for i in range(5)]
+            + [{"run_id": f"p{i}", "failures": []} for i in range(5)]
+        )
+    }
+    history_10 = {
+        "runs": (
+            [{"run_id": "r0", "failures": [{"id": fid_10, "status": "failed"}]}]
+            + [{"run_id": f"p{i}", "failures": []} for i in range(9)]
+        )
+    }
+    detect_flaky([failure_50], history=history_50)
+    detect_flaky([failure_10], history=history_10)
+    assert (failure_50.flakiness_score or 0) > (failure_10.flakiness_score or 0)
+
+
+def test_flaky_detector_od_vic_and_od_brit_beat_od():
+    from analyzer.intelligence.flaky_detector import detect_flaky
+    # "setup failed" contains "setup" (OD signal) AND "setup failed" (OD-Vic signal)
+    # OD-Vic should win because its matching signal is longer
+    failures_vic = [_make_failure("test_setup_fail", "setup failed during initialization")]
+    detect_flaky(failures_vic, history=None)
+    assert failures_vic[0].flakiness_category == "OD-Vic", (
+        f"Expected OD-Vic, got {failures_vic[0].flakiness_category}"
+    )
+
+    # "teardown failed" contains "teardown" (OD signal) AND "teardown failed" (OD-Brit signal)
+    # OD-Brit should win because its matching signal is longer
+    failures_brit = [_make_failure("test_teardown_fail", "teardown failed after test")]
+    detect_flaky(failures_brit, history=None)
+    assert failures_brit[0].flakiness_category == "OD-Brit", (
+        f"Expected OD-Brit, got {failures_brit[0].flakiness_category}"
+    )

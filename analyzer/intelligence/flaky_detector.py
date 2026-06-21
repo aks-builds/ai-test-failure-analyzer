@@ -31,41 +31,46 @@ _SCORE_CAP = 1.0
 def _classify_category(text: str | None) -> str | None:
     if not text:
         return None
-    lower = text.lower()
-    scores: dict[str, int] = {}
-    for cat, signals in _CATEGORY_SIGNALS.items():
-        hits = sum(1 for s in signals if s in lower)
-        if hits:
-            scores[cat] = hits
-    if not scores:
-        return None
-    # NDOD takes priority if "flaky" literal present
-    if "NDOD" in scores:
+    lowered = text.lower()
+    # NDOD takes priority if any NDOD signal is present
+    if any(s in lowered for s in _CATEGORY_SIGNALS.get("NDOD", [])):
         return "NDOD"
-    return max(scores, key=scores.__getitem__)
-
-
-def _jaccard_distance(set_a: set, set_b: set) -> float:
-    if not set_a and not set_b:
-        return 0.0
-    return 1.0 - len(set_a & set_b) / len(set_a | set_b)
+    best_cat: str | None = None
+    best_hit_count = 0
+    best_signal_len = 0
+    for cat, signals in _CATEGORY_SIGNALS.items():
+        if cat == "NDOD":
+            continue
+        hits = [s for s in signals if s in lowered]
+        count = len(hits)
+        max_len = max((len(s) for s in hits), default=0)
+        if count > best_hit_count or (count == best_hit_count and max_len > best_signal_len):
+            best_cat = cat
+            best_hit_count = count
+            best_signal_len = max_len
+    return best_cat if best_hit_count > 0 else None
 
 
 def _history_flakiness(failure_id: str, history: dict) -> float:
-    """Score 0.0–0.3 based on intermittent appearance in run history."""
+    """Score 0.0–0.3 based on intermittent appearance in run history.
+
+    Uses intermittency ratio: min(fail_count, pass_count) / total_runs.
+    A 50 % fail rate (maximally flaky) gives ratio=0.5 → score=0.3.
+    A 10 % or 90 % fail rate gives ratio=0.1 → score=0.06.
+    """
     runs = history.get("runs", [])
-    if len(runs) < 2:
+    total_runs = len(runs)
+    if total_runs < 2:
         return 0.0
-    run_ids_with_failure = {
-        r["run_id"] for r in runs
+    fail_count = sum(
+        1 for r in runs
         if any(f["id"] == failure_id for f in r.get("failures", []))
-    }
-    run_ids_without = {r["run_id"] for r in runs} - run_ids_with_failure
-    if not run_ids_with_failure or not run_ids_without:
+    )
+    pass_count = total_runs - fail_count
+    if fail_count == 0 or pass_count == 0:
         return 0.0
-    # High Jaccard distance between "in" and "out" sets → intermittent → flaky
-    dist = _jaccard_distance(run_ids_with_failure, run_ids_without)
-    return min(dist * 0.3, 0.3)
+    ratio = min(fail_count, pass_count) / max(total_runs, 1)
+    return min(ratio * 0.6, 0.3)
 
 
 def detect_flaky(
