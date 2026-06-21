@@ -31,6 +31,22 @@ No guesses. No fixture noise. No repeating the obvious.
 
 ---
 
+## Screenshots
+
+### Report
+
+<!-- cliproof:start id=report -->
+![ai-analyze report — triage table and hypothesis cards](.github/media/report.svg)
+<!-- cliproof:end id=report -->
+
+### TUI
+
+<!-- cliproof:start id=tui -->
+![ai-analyze TUI — interactive Textual dashboard](.github/media/tui.svg)
+<!-- cliproof:end id=tui -->
+
+---
+
 ## Why ai-test-failure-analyzer
 
 Manual test failure investigation takes 30–60 minutes: open the test output, grep through logs, dig through git history, check recent deploys, ask Slack. And you can still point at the wrong thing — especially when the test file itself has an "intentional failure" comment or a fixture designed to trigger the analyzer.
