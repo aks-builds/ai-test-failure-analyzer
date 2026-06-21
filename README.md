@@ -22,7 +22,7 @@ No guesses. No fixture noise. No repeating the obvious.
 [![Agent Skill](https://img.shields.io/badge/Agent-Skill-7c3aed)](skills/ai-test-failure-analyzer/SKILL.md)
 
 <!-- HERO-START -->
-![ai-analyze running 8-phase analysis](.github/media/hero.svg)
+![ai-analyze running 10-phase analysis](.github/media/hero.svg)
 <!-- HERO-END -->
 
 🩻 A real analysis — evidence from `git`, `app.log`, and `.env` — no guesses, no fixture noise.

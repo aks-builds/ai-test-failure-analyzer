@@ -1,4 +1,4 @@
-"""The orchestrator — chains all eight phases of analysis into one generator.
+"""The orchestrator — chains all ten phases of analysis into one generator.
 
 Every UI surface (CLI / TUI / Web / MCP) calls this. The generator emits
 progress events so each UI can render them in its own way without duplicating
@@ -91,7 +91,7 @@ def analyze(
     progress: Callable[[dict], None] | None = None,
     no_cache: bool = False,
 ) -> AnalysisResult:
-    """Run the full eight-phase analysis. Synchronous, with optional progress callback.
+    """Run the full ten-phase analysis. Synchronous, with optional progress callback.
 
     Args:
         results_path: Path to the test results file (relative to workspace OK).

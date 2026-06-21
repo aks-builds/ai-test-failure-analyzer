@@ -54,7 +54,7 @@ def cmd_analyze(
     enrich: bool = typer.Option(False, "--enrich", help="Send top hypothesis to configured LLM for natural-language explanation "
                                 "(requires ATFA_LLM_KEY or OPENAI_API_KEY)"),
 ) -> None:
-    """Run the full eight-phase analysis (default subcommand)."""
+    """Run the full ten-phase analysis (default subcommand)."""
     from .ui.cli import run
 
     code = run(

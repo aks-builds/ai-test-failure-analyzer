@@ -33,7 +33,7 @@ mcp = FastMCP(
     instructions=(
         "AI-assisted root-cause analysis for QA test failures. "
         "Supports Playwright, pytest, Jest/Vitest, and Cypress/WebdriverIO. "
-        "Call `analyze` for the full eight-phase flow, or call individual phase tools "
+        "Call `analyze` for the full ten-phase flow, or call individual phase tools "
         "(`collect_failures`, `scan_git_history`, etc.) for fine-grained control."
     ),
 )
@@ -296,7 +296,7 @@ async def analyze(
     create_issue: bool = False,
     repo: str | None = None,
 ) -> dict[str, Any]:
-    """Run the full eight-phase analysis end-to-end.
+    """Run the full ten-phase analysis end-to-end.
 
     Uses MCP elicitation for clarifying questions when the client supports it.
     """
