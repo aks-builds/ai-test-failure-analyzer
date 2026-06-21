@@ -141,6 +141,20 @@ def analyze(
     # ── Phase 2: Test intent — already in NormalizedFailure (file, line, comments-in-error). No separate call. ─
     emit({"phase": 2, "name": "Read test intent", "status": "completed", "data": {"failures_with_intent": sum(1 for f in failures if f.error_message)}})
 
+    # ── Phase 2.5: Detect flaky tests ─────────────────────────────────────────
+    from .intelligence.flaky_detector import detect_flaky
+    emit({"phase": "2.5", "name": "Detect flaky tests", "status": "started"})
+    _t25 = time.monotonic()
+    # history is populated later by FlakyHistoryCollector (Phase 4 plan).
+    # For now pass None — history-based scoring activates in Phase 4.
+    failures = detect_flaky(failures, history=None)
+    flaky_count = sum(1 for f in failures if (f.flakiness_score or 0) >= 0.5)
+    phase_timings["2.5_detect_flaky"] = time.monotonic() - _t25
+    emit({
+        "phase": "2.5", "name": "Detect flaky tests", "status": "completed",
+        "data": {"probable_flakes": flaky_count},
+    })
+
     # ── Phase 5.5: Collect evidence (parallel) ─────────────────────────────
     from .evidence import _REGISTRY
     import time as _time

@@ -64,3 +64,92 @@ def test_similar_error_messages_have_high_cosine_similarity():
     sim_similar = cosine_similarity(vecs[0], vecs[1])
     sim_different = cosine_similarity(vecs[0], vecs[2])
     assert sim_similar > sim_different
+
+
+# ── Flaky detector ────────────────────────────────────────────────────────────
+
+def _make_failure(title, error_msg=None, status="failed"):
+    from analyzer.parsers.base import NormalizedFailure, make_failure_id
+    return NormalizedFailure(
+        id=make_failure_id("pytest", "suite", title, "test.py"),
+        framework="pytest", suite="suite", title=title, file="test.py",
+        status=status, error_message=error_msg,
+    )
+
+
+def test_flaky_detector_returns_same_list():
+    from analyzer.intelligence.flaky_detector import detect_flaky
+    failures = [_make_failure("test_a", "timeout after 5s")]
+    result = detect_flaky(failures, history=None)
+    assert result is failures  # mutates in-place, returns same object
+
+
+def test_flaky_detector_does_not_change_status():
+    from analyzer.intelligence.flaky_detector import detect_flaky
+    failures = [_make_failure("test_a", "timeout after 5s")]
+    detect_flaky(failures, history=None)
+    assert failures[0].status == "failed"  # status must NOT be changed
+
+
+def test_flaky_detector_empty_input():
+    from analyzer.intelligence.flaky_detector import detect_flaky
+    result = detect_flaky([], history=None)
+    assert result == []
+
+
+def test_flaky_detector_timeout_error_scores_id_category():
+    from analyzer.intelligence.flaky_detector import detect_flaky
+    failures = [_make_failure("test_slow", "Timeout: element not found after 30000ms")]
+    detect_flaky(failures, history=None)
+    assert failures[0].flakiness_category == "ID"
+    assert (failures[0].flakiness_score or 0) > 0
+
+
+def test_flaky_detector_network_error_scores_ud_category():
+    from analyzer.intelligence.flaky_detector import detect_flaky
+    failures = [_make_failure("test_api", "ECONNREFUSED 127.0.0.1:3000")]
+    detect_flaky(failures, history=None)
+    assert failures[0].flakiness_category == "UD"
+
+
+def test_flaky_detector_similar_errors_increase_score():
+    from analyzer.intelligence.flaky_detector import detect_flaky
+    # Two tests with very similar error messages should each get a higher score
+    # than a single isolated test with the same message
+    isolated = [_make_failure("test_isolated", "Expected status 201 but got 404")]
+    similar_pair = [
+        _make_failure("test_a", "Expected status 201 but got 404 for POST /users"),
+        _make_failure("test_b", "Expected status 201 but got 404 for POST /users/register"),
+    ]
+    detect_flaky(isolated, history=None)
+    detect_flaky(similar_pair, history=None)
+    # Similar pair tests should have higher score due to TF-IDF signal
+    avg_pair = sum(f.flakiness_score or 0 for f in similar_pair) / 2
+    assert avg_pair >= (isolated[0].flakiness_score or 0)
+
+
+def test_flaky_detector_order_dependent_error_scores_od():
+    from analyzer.intelligence.flaky_detector import detect_flaky
+    failures = [_make_failure("test_setup", "duplicate key constraint in beforeAll setup")]
+    detect_flaky(failures, history=None)
+    assert failures[0].flakiness_category in ("OD", "OD-Vic")
+
+
+def test_flaky_detector_history_increases_score():
+    from analyzer.intelligence.flaky_detector import detect_flaky
+    from analyzer.parsers.base import NormalizedFailure, make_failure_id
+    fid = make_failure_id("pytest", "suite", "test_intermittent", "test.py")
+    failure = NormalizedFailure(
+        id=fid, framework="pytest", suite="suite",
+        title="test_intermittent", file="test.py", status="failed",
+    )
+    # History: this test failed in run1 but NOT run2 and run3 (intermittent)
+    history = {
+        "runs": [
+            {"run_id": "run1", "failures": [{"id": fid, "status": "failed"}]},
+            {"run_id": "run2", "failures": []},
+            {"run_id": "run3", "failures": []},
+        ]
+    }
+    detect_flaky([failure], history=history)
+    assert (failure.flakiness_score or 0) > 0
