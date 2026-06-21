@@ -83,6 +83,14 @@ def _validate_inputs(
             console.print("  Expected: owner/repo  (e.g. acme-corp/my-api-service)")
             return 2
 
+    if framework != "auto":
+        from ..parsers import FRAMEWORKS
+        valid = {"auto"} | set(FRAMEWORKS.keys())
+        if framework not in valid:
+            console.print(f"\n[red]✗[/red] Unknown --framework {framework!r}")
+            console.print(f"  Supported: {', '.join(sorted(valid))}")
+            return 2
+
     return None
 
 

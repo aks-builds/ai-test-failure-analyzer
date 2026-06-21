@@ -101,5 +101,5 @@ def test_invalid_framework():
         "--non-interactive",
     )
     assert r.returncode == 2
-    assert "Unknown framework" in combined(r)
+    assert "Unknown" in combined(r) and "framework" in combined(r).lower()
     assert "Traceback" not in r.stderr
