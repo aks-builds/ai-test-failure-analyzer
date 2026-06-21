@@ -35,6 +35,24 @@ from ..github_integration import create_issue_from_hypothesis, detect_default_re
 from ..orchestrator import AnalysisResult, analyze
 
 
+def format_phase_line(phase: int | str, name: str, timing_seconds: float | None) -> str:
+    """Format a single phase completion line for display.
+
+    Args:
+        phase: Phase number (int or string like "2.5").
+        name: Human-readable phase name.
+        timing_seconds: Elapsed seconds, or None/0 for no suffix.
+
+    Returns:
+        Formatted line like "  ✓ Phase 1  Collect failures               123ms"
+    """
+    if timing_seconds and timing_seconds > 0:
+        suffix = f"  {int(timing_seconds * 1000)}ms"
+    else:
+        suffix = ""
+    return f"  ✓ Phase {phase}  {name:<30}{suffix}"
+
+
 class IssueModal(ModalScreen[bool]):
     """Modal for creating a GitHub issue from the top hypothesis."""
 

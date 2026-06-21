@@ -8,6 +8,7 @@ from typing import Any
 from ..hypothesis import Hypothesis
 from ..parsers.base import NormalizedFailure
 from ..security import strip_html
+from ..remediation import run_command_for_framework
 
 
 def _confidence_bar(score: int) -> str:
@@ -116,6 +117,9 @@ def render_markdown_report(
             lines.append("**Remediation**:")
             for i, step in enumerate(h.remediation, 1):
                 lines.append(f"{i}. {step}")
+            run_cmd = run_command_for_framework(framework or "")
+            if run_cmd:
+                lines.append(f"- **Debug command:** `{run_cmd}`")
             lines.append("")
         if h.buggy_location:
             lines.append(f"**Buggy location**: `{h.buggy_location}`")
