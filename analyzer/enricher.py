@@ -37,6 +37,12 @@ class EnrichConfig:
     api_key: str
     model: str
 
+    def __repr__(self) -> str:
+        return (
+            f"EnrichConfig(provider={self.provider!r}, endpoint={self.endpoint!r}, "
+            f"api_key=\"***\", model={self.model!r})"
+        )
+
     @classmethod
     def from_env(cls) -> "EnrichConfig":
         key = os.environ.get("ATFA_LLM_KEY") or os.environ.get("OPENAI_API_KEY")
@@ -48,9 +54,20 @@ class EnrichConfig:
             # Default to Claude if ATFA_LLM_KEY set without custom endpoint
             endpoint = _CLAUDE_ENDPOINT
             model = os.environ.get("ATFA_LLM_MODEL", "claude-sonnet-4-6")
-        provider = "claude" if "anthropic" in endpoint else (
-            "openai" if "openai" in endpoint else "custom"
-        )
+        # ATFA_LLM_PROVIDER overrides auto-detection when explicitly set
+        explicit_provider = os.environ.get("ATFA_LLM_PROVIDER", "").lower()
+        if explicit_provider:
+            provider = explicit_provider
+        else:
+            endpoint_lower = endpoint.lower()
+            if "anthropic" in endpoint_lower:
+                provider = "claude"
+            elif "openai" in endpoint_lower:
+                provider = "openai"
+            elif "11434" in endpoint_lower or "ollama" in endpoint_lower:
+                provider = "ollama"
+            else:
+                provider = "custom"
         return cls(provider=provider, endpoint=endpoint, api_key=key, model=model)
 
 
@@ -82,6 +99,25 @@ def _call_openai(config: EnrichConfig, prompt: str) -> str:
     return data["choices"][0]["message"]["content"]
 
 
+def _call_ollama(config: EnrichConfig, prompt: str) -> str:
+    try:
+        body = json.dumps({
+            "model": config.model,
+            "messages": [{"role": "user", "content": prompt}],
+            "stream": False,
+        }).encode()
+        req = urllib.request.Request(
+            config.endpoint,
+            data=body,
+            headers={"Content-Type": "application/json"},
+        )
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            data = json.loads(resp.read())
+        return data["message"]["content"]
+    except Exception:
+        return ""
+
+
 def _call_claude(config: EnrichConfig, prompt: str) -> str:
     body = json.dumps({
         "model": config.model,
@@ -111,6 +147,8 @@ def enrich(result: AnalysisResult, config: EnrichConfig) -> str:
         prompt = _build_prompt(result)
         if config.provider == "claude":
             return _call_claude(config, prompt)
+        elif config.provider == "ollama":
+            return _call_ollama(config, prompt)
         else:
             return _call_openai(config, prompt)
     except (urllib.error.URLError, urllib.error.HTTPError, KeyError, json.JSONDecodeError):

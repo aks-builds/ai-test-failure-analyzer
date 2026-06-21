@@ -117,6 +117,8 @@ def run(
             enrichment = _enrich(result, enrich_config)
             if enrichment:
                 result.report_markdown += "\n\n" + enrichment
+                console.print("\n[bold cyan]── LLM Enrichment ──[/bold cyan]")
+                console.print(enrichment)
         except ValueError as e:
             print(f"  {e}", file=sys.stderr)
 
