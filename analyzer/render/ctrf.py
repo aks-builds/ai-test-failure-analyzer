@@ -11,6 +11,8 @@ from analyzer.hypothesis import Hypothesis
 
 _TOOL_NAME = "ai-test-failure-analyzer"
 
+_CTRF_STATUS_MAP = {"flaky": "other", "error": "failed"}
+
 
 def _get_tool_version() -> str:
     try:
@@ -36,7 +38,10 @@ def render_ctrf_report(result: AnalysisResult) -> str:
     passed = sum(1 for f in failures if f.status == "passed")
     failed = sum(1 for f in failures if f.status == "failed")
     skipped = sum(1 for f in failures if f.status == "skipped")
-    flaky = sum(1 for f in failures if f.status == "flaky" or (f.flakiness_score or 0) >= 0.5)
+    other = sum(
+        1 for f in failures
+        if _CTRF_STATUS_MAP.get(f.status, f.status) not in ("passed", "failed", "skipped")
+    )
 
     tests_out = []
     for f in failures:
@@ -48,12 +53,13 @@ def render_ctrf_report(result: AnalysisResult) -> str:
                 f"{hyp.summary[:120]} "
                 f"Evidence: {'+'.join(sorted({e.source for e in hyp.evidence_chain})) or 'none'}."
             )
+        ctrf_status = _CTRF_STATUS_MAP.get(f.status, f.status)
         test_obj: dict = {
             "name": f.title,
-            "status": f.status,
+            "status": ctrf_status,
             "duration": f.duration_ms or 0,
         }
-        if f.status == "failed":
+        if ctrf_status == "failed":
             if f.error_message:
                 test_obj["message"] = f.error_message[:500]
             if f.error_stack:
@@ -66,8 +72,8 @@ def render_ctrf_report(result: AnalysisResult) -> str:
             test_obj["suite"] = f.suite
         if ai_str:
             test_obj["ai"] = ai_str[:500]
-        # CTRF extra block — structured data for programmatic consumers
-        extra: dict = {}
+        # CTRF extra block — computed fields win over raw ctrf_extra
+        extra: dict = dict(f.ctrf_extra) if f.ctrf_extra else {}
         if hyp:
             extra["hypothesis_confidence"] = hyp.confidence
             extra["hypothesis_title"] = hyp.title
@@ -80,9 +86,6 @@ def render_ctrf_report(result: AnalysisResult) -> str:
             extra["flakiness_category"] = f.flakiness_category
         if extra:
             test_obj["extra"] = extra
-        # Preserve original ctrf_extra fields
-        if f.ctrf_extra:
-            test_obj.setdefault("extra", {}).update(f.ctrf_extra)
         tests_out.append(test_obj)
 
     ctrf = {
@@ -93,7 +96,7 @@ def render_ctrf_report(result: AnalysisResult) -> str:
                 "passed": passed,
                 "failed": failed,
                 "skipped": skipped,
-                "flaky": flaky,
+                "other": other,
                 "start": now_ms - elapsed_ms,
                 "stop": now_ms,
             },

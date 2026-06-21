@@ -80,3 +80,49 @@ def test_ctrf_render_tool_name_is_correct():
     result = _make_result(framework="jest")
     parsed = json.loads(render_ctrf_report(result))
     assert parsed["results"]["tool"]["name"] == "ai-test-failure-analyzer"
+
+
+def test_ctrf_render_flaky_status_maps_to_other():
+    """A failure with status='flaky' must produce CTRF status='other' and flaky=True."""
+    from analyzer.render.ctrf import render_ctrf_report
+    from analyzer.orchestrator import AnalysisResult
+    from analyzer.parsers.base import NormalizedFailure, make_failure_id
+    from analyzer.workspace_scanner import WorkspaceProfile
+    f = NormalizedFailure(
+        id=make_failure_id("playwright", "suite", "flaky_test", "test.spec.ts"),
+        framework="playwright", suite="suite", title="flaky_test",
+        file="test.spec.ts", status="flaky",
+        error_message="Intermittent timeout",
+        flakiness_score=0.8,
+    )
+    result = AnalysisResult(
+        framework="playwright",
+        failures=[f],
+        git={"available": False, "commits": [], "summary": {}},
+        logs={"available": False, "matches": [], "summary": {}},
+        config={"available": False, "files": [], "summary": {}},
+        matrix=[],
+        clusters=[],
+        hypotheses=[],
+        report_markdown="# report",
+        elapsed_seconds=1.0,
+        profile=WorkspaceProfile(
+            mode="FULL_SOURCE", source_roots=[], test_roots=[], noise_paths=[],
+            openapi_spec=None, has_git=False,
+        ),
+        phase_timings={},
+    )
+    parsed = json.loads(render_ctrf_report(result))
+    test = parsed["results"]["tests"][0]
+    assert test["status"] == "other", f"Expected 'other', got {test['status']!r}"
+    assert test.get("flaky") is True, "Expected flaky=True for flaky test"
+
+
+def test_ctrf_render_summary_has_other_not_flaky():
+    """Summary must have 'other' key, not 'flaky'."""
+    from analyzer.render.ctrf import render_ctrf_report
+    result = _make_result()
+    parsed = json.loads(render_ctrf_report(result))
+    summary = parsed["results"]["summary"]
+    assert "other" in summary, "'other' key missing from summary"
+    assert "flaky" not in summary, "'flaky' key must not appear in summary"
