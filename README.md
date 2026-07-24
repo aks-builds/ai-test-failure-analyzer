@@ -27,6 +27,8 @@ No guesses. No fixture noise. No repeating the obvious.
 
 🩻 A real analysis — evidence from `git`, `app.log`, and `.env` — no guesses, no fixture noise.
 
+<img src=".github/media/how-it-works.png" width="900" alt="How ai-test-failure-analyzer works: an 8-phase pipeline that collects failures, reads test intent, detects flaky tests, gathers git/log/config evidence in parallel, cross-correlates it, gates hypotheses through a Tier-1 evidence check, and produces a confidence-scored report delivered via MCP server, CLI, and web UI" />
+
 </div>
 
 ---
